@@ -21,7 +21,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if Supabase is available
+    // Set loading to false immediately to prevent hanging
+    setLoading(false)
+    
+    // Check if Supabase is available in the background
     const checkSupabaseConnection = async () => {
       try {
         // Get initial session
@@ -29,17 +32,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           console.warn('Supabase connection error:', error)
-          // If Supabase is not available, set loading to false so user can see the auth form
-          setLoading(false)
           return
         }
         
         setSession(session)
         setUser(session?.user ?? null)
-        setLoading(false)
       } catch (error) {
         console.warn('Supabase not available:', error)
-        setLoading(false)
       }
     }
 
