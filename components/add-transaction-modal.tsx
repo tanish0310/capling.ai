@@ -18,6 +18,7 @@ interface AddTransactionModalProps {
 
 export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, accountId }: AddTransactionModalProps) {
   const [formData, setFormData] = useState({
+    merchant: '',
     amount: '',
     description: '',
     category: '',
@@ -29,7 +30,7 @@ export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, ac
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.amount || !formData.description) {
+    if (!formData.merchant || !formData.amount || !formData.description) {
       setError('Please fill in all required fields')
       return
     }
@@ -44,9 +45,10 @@ export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, ac
       }
 
       const transactionData = {
+        merchant: formData.merchant,
         amount,
         description: formData.description,
-        type: formData.type,
+        category: formData.category || 'other',
       }
 
       // Call the mock transaction creation
@@ -60,7 +62,7 @@ export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, ac
   }
 
   const handleClose = () => {
-    setFormData({ amount: '', description: '', category: '', type: 'purchase' })
+    setFormData({ merchant: '', amount: '', description: '', category: '', type: 'purchase' })
     setError(null)
     onOpenChange(false)
   }
@@ -74,6 +76,17 @@ export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, ac
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="merchant">Merchant *</Label>
+            <Input
+              id="merchant"
+              placeholder="Store or business name"
+              value={formData.merchant}
+              onChange={(e) => setFormData(prev => ({ ...prev, merchant: e.target.value }))}
+              required
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="amount">Amount *</Label>
             <Input
