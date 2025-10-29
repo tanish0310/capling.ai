@@ -4,9 +4,14 @@ export async function POST(request: NextRequest) {
   try {
     const { merchant, amount, description } = await request.json()
 
-    if (!merchant || !amount || !description) {
+    // Validate and provide fallbacks
+    const validMerchant = merchant || 'Unknown Merchant'
+    const validAmount = amount || 0
+    const validDescription = description || merchant || 'No description provided'
+
+    if (!merchant || amount === undefined || amount === null) {
       return NextResponse.json(
-        { error: 'Missing required fields: merchant, amount, description' },
+        { error: 'Missing required fields: merchant, amount' },
         { status: 400 }
       )
     }
@@ -23,9 +28,9 @@ export async function POST(request: NextRequest) {
     const prompt = `You are Capling, a friendly financial advisor dinosaur. Analyze this transaction and provide helpful, encouraging feedback.
 
 Transaction Details:
-- Merchant: ${merchant}
-- Amount: $${amount.toFixed(2)}
-- Description: ${description}
+- Merchant: ${validMerchant}
+- Amount: $${validAmount.toFixed(2)}
+- Description: ${validDescription}
 
 Classify this transaction as one of:
 - "responsible": Essential purchases, planned expenses, good value
@@ -63,7 +68,7 @@ Be encouraging but honest. Focus on helping the user make better financial decis
           }
         ],
         temperature: 0.7,
-        max_tokens: 200
+        max_completion_tokens: 200
       })
     })
 
