@@ -112,32 +112,73 @@ export function CaplingCharacter({ mood, className }: CaplingCharacterProps) {
   const getMoodColor = () => {
     switch (mood) {
       case "happy":
-        return "from-primary to-chart-5"
+        return "from-green-400 to-emerald-500"
       case "neutral":
-        return "from-secondary to-chart-2"
+        return "from-blue-400 to-cyan-500"
       case "worried":
-        return "from-accent to-secondary"
+        return "from-yellow-400 to-orange-500"
       case "sad":
-        return "from-destructive to-accent"
+        return "from-red-400 to-pink-500"
       default:
-        return "from-primary to-chart-5"
+        return "from-green-400 to-emerald-500"
+    }
+  }
+
+  const getMoodEmoji = () => {
+    switch (mood) {
+      case "happy":
+        return "😊"
+      case "neutral":
+        return "😐"
+      case "worried":
+        return "😟"
+      case "sad":
+        return "😢"
+      default:
+        return "😊"
+    }
+  }
+
+  const getMoodMessage = () => {
+    switch (mood) {
+      case "happy":
+        return "Great job! Keep it up!"
+      case "neutral":
+        return "You're doing okay!"
+      case "worried":
+        return "Let's be more careful!"
+      case "sad":
+        return "We can do better!"
+      default:
+        return "Great job! Keep it up!"
     }
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-3", className)}>
+    <div className={cn("flex flex-col items-center gap-6", className)}>
       <div
         className={cn(
-          "relative flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br shadow-lg transition-all duration-500 p-4",
+          "relative flex h-64 w-64 items-center justify-center rounded-full bg-gradient-to-br shadow-2xl transition-all duration-700 p-12 border-4 border-white/20",
           getMoodColor(),
         )}
       >
-        <div className="animate-bounce-subtle">
+        {/* Glow effect */}
+        <div className={cn(
+          "absolute inset-0 rounded-full blur-xl opacity-30 transition-all duration-700",
+          getMoodColor()
+        )} />
+        
+        {/* Character */}
+        <div className="relative z-10 animate-bounce-subtle scale-90">
           <DinosaurSVG mood={mood} />
         </div>
       </div>
-      <div className="text-center">
-        <p className="text-sm font-medium text-muted-foreground capitalize">Capling is {mood}</p>
+      
+      <div className="text-center space-y-3">
+        <h3 className="text-2xl font-bold text-foreground">Capling</h3>
+        <p className="text-base font-medium text-muted-foreground">
+          {getMoodMessage()}
+        </p>
       </div>
     </div>
   )
