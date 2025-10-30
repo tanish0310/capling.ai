@@ -20,7 +20,9 @@ import { ProtectedRoute } from "@/components/auth/protected-route"
 import { UserMenu } from "@/components/auth/user-menu"
 import { AuthForm } from "@/components/auth/auth-form"
 import { SimpleDemo } from "@/components/simple-demo"
+import { TransactionSimulator } from "@/components/transaction-simulator"
 import { useAuth } from "@/contexts/auth-context"
+import Link from "next/link"
 
 export default function CaplingApp() {
   return (
@@ -244,6 +246,16 @@ function CaplingAppContent() {
               <Button variant="ghost" size="icon" onClick={refreshData}>
                 <RefreshCw className="h-5 w-5" />
               </Button>
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-muted-foreground">
+                  ID: {user.id.slice(0, 8)}...
+                </div>
+                <Link href="/test-api">
+                  <Button variant="outline" size="sm">
+                    Test API
+                  </Button>
+                </Link>
+              </div>
               <UserMenu />
             </div>
           </div>
@@ -364,14 +376,23 @@ function CaplingAppContent() {
               </div>
             </div>
 
-            <Button 
-              className="w-full gap-2" 
-              size="lg"
-              onClick={() => setAddTransactionOpen(true)}
-            >
-              <Plus className="h-5 w-5" />
-              Add Transaction
-            </Button>
+            <div className="space-y-4">
+              <Button 
+                className="w-full gap-2" 
+                size="lg"
+                onClick={() => setAddTransactionOpen(true)}
+              >
+                <Plus className="h-5 w-5" />
+                Add Transaction
+              </Button>
+              
+              {/* Transaction Simulator */}
+              <TransactionSimulator
+                userId={user.id}
+                accountId={currentAccount?.id}
+                onTransactionsAdded={refreshData}
+              />
+            </div>
           </TabsContent>
 
           {/* Transactions Feed */}
@@ -498,6 +519,7 @@ function CaplingAppContent() {
         onOpenChange={setAddTransactionOpen} 
         onTransactionAdded={handleAddTransaction}
         accountId={currentAccount?.id || ''}
+        userId={user.id}
       />
       <GoalModal
         open={addGoalOpen}

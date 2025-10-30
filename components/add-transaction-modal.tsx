@@ -14,9 +14,10 @@ interface AddTransactionModalProps {
   onOpenChange: (open: boolean) => void
   onTransactionAdded: (transaction: any) => void
   accountId: string
+  userId: string
 }
 
-export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, accountId }: AddTransactionModalProps) {
+export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, accountId, userId }: AddTransactionModalProps) {
   const [formData, setFormData] = useState({
     merchant: '',
     amount: '',
@@ -44,15 +45,29 @@ export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, ac
         throw new Error('Please enter a valid amount')
       }
 
-      const transactionData = {
-        merchant: formData.merchant,
-        amount,
-        description: formData.description,
-        category: formData.category || 'other',
+      // Process transaction through the new API
+      const response = await fetch('/api/process-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          accountId,
+          merchant: formData.merchant,
+          amount,
+          category: formData.category || 'shopping',
+          description: formData.description
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to process transaction')
       }
 
-      // Call the mock transaction creation
-      await onTransactionAdded(transactionData)
+      const result = await response.json()
+      
+      // Call the callback with the processed transaction
+      await onTransactionAdded(result.transaction)
       handleClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add transaction')
