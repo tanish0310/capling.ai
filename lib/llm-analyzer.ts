@@ -52,8 +52,8 @@ Be encouraging but honest. Focus on helping the user make better financial decis
 
 // Mock LLM response for development/fallback
 const generateMockAnalysis = (merchant: string, amount: number, description: string): TransactionAnalysis => {
-  const desc = description.toLowerCase()
-  const merchantLower = merchant.toLowerCase()
+  const desc = (description || '').toLowerCase()
+  const merchantLower = (merchant || '').toLowerCase()
   
   // Simple heuristics for mock responses
   let classification: TransactionAnalysis['classification'] = 'responsible'
