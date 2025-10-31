@@ -1,12 +1,17 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { CaplingNameEditor } from "./capling-name-editor"
 
 type CaplingMood = "happy" | "neutral" | "worried" | "sad"
 
 interface CaplingCharacterProps {
   mood: CaplingMood
   className?: string
+  name?: string
+  showNameEditor?: boolean
+  onNameUpdate?: (newName: string) => void
+  userId?: string
 }
 
 function DinosaurSVG({ mood }: { mood: CaplingMood }) {
@@ -60,21 +65,27 @@ function DinosaurSVG({ mood }: { mood: CaplingMood }) {
 
   return (
     <svg viewBox="0 0 100 120" className="w-full h-full text-ring">
+      {/* Body shadow */}
+      <ellipse cx="52" cy="77" rx="35" ry="30" fill="#16a34a" opacity="0.3" />
+      
       {/* Body */}
       <ellipse cx="50" cy="75" rx="35" ry="30" fill="#4ade80" />
 
+      {/* Head shadow */}
+      <circle cx="52" cy="42" r="28" fill="#16a34a" opacity="0.3" />
+      
       {/* Head */}
       <circle cx="50" cy="40" r="28" fill="#4ade80" />
 
       {/* Belly spot */}
-      <ellipse cx="50" cy="78" rx="22" ry="18" fill="#86efac" opacity="0.6" />
+      <ellipse cx="50" cy="78" rx="22" ry="18" fill="#86efac" opacity="0.8" />
 
       {/* Spikes on back */}
-      <path d="M 30 70 L 25 60 L 30 65 Z" fill="#22c55e" />
-      <path d="M 40 72 L 37 60 L 42 68 Z" fill="#22c55e" />
-      <path d="M 50 73 L 48 60 L 52 70 Z" fill="#22c55e" />
-      <path d="M 60 72 L 58 60 L 63 68 Z" fill="#22c55e" />
-      <path d="M 70 70 L 68 60 L 73 65 Z" fill="#22c55e" />
+      <path d="M 30 70 L 25 60 L 30 65 Z" fill="#15803d" />
+      <path d="M 40 72 L 37 60 L 42 68 Z" fill="#15803d" />
+      <path d="M 50 73 L 48 60 L 52 70 Z" fill="#15803d" />
+      <path d="M 60 72 L 58 60 L 63 68 Z" fill="#15803d" />
+      <path d="M 70 70 L 68 60 L 73 65 Z" fill="#15803d" />
 
       {/* Arms */}
       <ellipse cx="22" cy="70" rx="8" ry="12" fill="#4ade80" />
@@ -108,7 +119,7 @@ function DinosaurSVG({ mood }: { mood: CaplingMood }) {
   )
 }
 
-export function CaplingCharacter({ mood, className }: CaplingCharacterProps) {
+export function CaplingCharacter({ mood, className, name = "Capling", showNameEditor = false, onNameUpdate, userId }: CaplingCharacterProps) {
   const getMoodColor = () => {
     switch (mood) {
       case "happy":
@@ -156,6 +167,20 @@ export function CaplingCharacter({ mood, className }: CaplingCharacterProps) {
 
   return (
     <div className={cn("flex flex-col items-center gap-6", className)}>
+      {/* Name and edit button above the character */}
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2">
+          <h3 className="text-2xl font-bold text-foreground">{name}</h3>
+          {showNameEditor && onNameUpdate && userId && (
+            <CaplingNameEditor
+              currentName={name}
+              onNameUpdate={onNameUpdate}
+              userId={userId}
+            />
+          )}
+        </div>
+      </div>
+      
       <div
         className={cn(
           "relative flex h-64 w-64 items-center justify-center rounded-full bg-gradient-to-br shadow-2xl transition-all duration-700 p-12 border-4 border-white/20",
@@ -169,16 +194,9 @@ export function CaplingCharacter({ mood, className }: CaplingCharacterProps) {
         )} />
         
         {/* Character */}
-        <div className="relative z-10 animate-bounce-subtle scale-90">
+        <div className="relative z-10 animate-bounce-subtle scale-100 drop-shadow-2xl">
           <DinosaurSVG mood={mood} />
         </div>
-      </div>
-      
-      <div className="text-center space-y-3">
-        <h3 className="text-2xl font-bold text-foreground">Capling</h3>
-        <p className="text-base font-medium text-muted-foreground">
-          {getMoodMessage()}
-        </p>
       </div>
     </div>
   )
