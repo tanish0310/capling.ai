@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
-import { generateRealisticFinancialProfile } from '@/lib/realistic-fake-data'
 import type { Database } from '@/lib/supabase'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
@@ -100,121 +99,25 @@ export function useSupabaseData() {
       // If no profile exists, create a realistic one
       let finalProfileData = profileData
       if (!profileData) {
-        console.log('No user profile found, creating realistic profile...')
-        
-        // Generate realistic profile data
-        const realisticProfile = generateRealisticFinancialProfile(
-          user.id, 
-          user.user_metadata?.full_name,
-          'medium' // Default to medium income level
-        )
-        
-        const { data: newProfile, error: createProfileError } = await supabase
-          .from('user_profiles')
-          .insert([{
-            id: user.id,
-            full_name: user.user_metadata?.full_name || null,
-            avatar_url: user.user_metadata?.avatar_url || null,
-            weekly_budget: realisticProfile.profile.weekly_budget
-          }])
-          .select()
-          .single()
-
-        if (createProfileError) {
-          console.error('Failed to create user profile:', createProfileError)
-          // Continue with a realistic profile object instead of throwing
-          finalProfileData = {
-            id: user.id,
-            full_name: user.user_metadata?.full_name || null,
-            avatar_url: user.user_metadata?.avatar_url || null,
-            weekly_budget: realisticProfile.profile.weekly_budget,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        } else {
-          finalProfileData = newProfile
-        }
+        console.log('No user profile found - user needs to complete onboarding')
+        // Don't create realistic data - let the onboarding process handle it
+        finalProfileData = null
       }
 
-      // If no account exists, create a realistic one
+      // If no account exists, don't create one automatically during onboarding
       let finalAccountsData = accountsData
       if (!accountsData || accountsData.length === 0) {
-        console.log('No account found, creating realistic account...')
-        
-        // Generate realistic account data
-        const realisticProfile = generateRealisticFinancialProfile(
-          user.id, 
-          user.user_metadata?.full_name,
-          'medium' // Default to medium income level
-        )
-        
-        const { data: newAccount, error: createAccountError } = await supabase
-          .from('accounts')
-          .insert([{
-            user_id: user.id,
-            account_name: realisticProfile.account.account_name,
-            account_type: realisticProfile.account.account_type,
-            balance: realisticProfile.account.balance
-          }])
-          .select()
-          .single()
-
-        if (createAccountError) {
-          console.error('Failed to create account:', createAccountError)
-          // Continue with a realistic account object instead of throwing
-          finalAccountsData = [{
-            id: 'default-account',
-            user_id: user.id,
-            account_name: realisticProfile.account.account_name,
-            account_type: realisticProfile.account.account_type,
-            balance: realisticProfile.account.balance,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]
-        } else {
-          finalAccountsData = [newAccount]
-        }
+        console.log('No account found - user needs to complete onboarding')
+        // Don't create realistic data - let the onboarding process handle it
+        finalAccountsData = []
       }
 
-      // If no transactions exist, populate with realistic sample data
+      // If no transactions exist, don't create them automatically during onboarding
       let finalTransactionsData = transactionsData
       if (!transactionsData || transactionsData.length === 0) {
-        console.log('No transactions found, creating realistic sample transactions...')
-        
-        // Generate realistic sample transactions
-        const realisticProfile = generateRealisticFinancialProfile(
-          user.id, 
-          user.user_metadata?.full_name,
-          'medium' // Default to medium income level
-        )
-        
-        const sampleTransactions = realisticProfile.transactions.slice(0, 15) // First 15 transactions
-        
-        // Insert sample transactions into database
-        const { data: insertedTransactions, error: insertError } = await supabase
-          .from('transactions')
-          .insert(sampleTransactions.map(tx => ({
-            user_id: tx.user_id,
-            account_id: finalAccountsData[0].id,
-            merchant: tx.merchant,
-            amount: tx.amount,
-            category: tx.category,
-            classification: tx.classification,
-            reflection: tx.reflection,
-            description: tx.description,
-            date: tx.date,
-            timestamp: tx.timestamp,
-            type: tx.type
-          })))
-          .select()
-
-        if (insertError) {
-          console.error('Failed to insert sample transactions:', insertError)
-          // Use the generated transactions anyway for display
-          finalTransactionsData = sampleTransactions
-        } else {
-          finalTransactionsData = insertedTransactions
-        }
+        console.log('No transactions found - user needs to complete onboarding')
+        // Don't create realistic data - let the onboarding process handle it
+        finalTransactionsData = []
       }
 
       setTransactions(finalTransactionsData || [])
