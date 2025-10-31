@@ -2,13 +2,16 @@
 
 import { Progress } from "@/components/ui/progress"
 import { Card } from "@/components/ui/card"
+import { InlineBudgetEditor } from "@/components/budget-editor"
 
 interface BudgetProgressProps {
   spent: number
   budget: number
+  userId: string
+  onBudgetUpdate: (newBudget: number) => void
 }
 
-export function BudgetProgress({ spent, budget }: BudgetProgressProps) {
+export function BudgetProgress({ spent, budget, userId, onBudgetUpdate }: BudgetProgressProps) {
   const percentage = Math.min((spent / budget) * 100, 100)
   const remaining = Math.max(budget - spent, 0)
 
@@ -30,9 +33,16 @@ export function BudgetProgress({ spent, budget }: BudgetProgressProps) {
           <span className="text-muted-foreground">
             Spent: <span className="font-semibold text-foreground">${spent.toFixed(2)}</span>
           </span>
-          <span className="text-muted-foreground">
-            Remaining: <span className="font-semibold text-primary">${remaining.toFixed(2)}</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">
+              Remaining: <span className="font-semibold text-primary">${remaining.toFixed(2)}</span>
+            </span>
+            <InlineBudgetEditor 
+              currentBudget={budget}
+              userId={userId}
+              onBudgetUpdate={onBudgetUpdate}
+            />
+          </div>
         </div>
       </div>
     </Card>
