@@ -141,8 +141,10 @@ export async function POST(request: NextRequest) {
       console.error('LLM analysis failed:', llmError)
       // Fallback analysis if LLM fails
       analysis = {
-        classification: 'borderline' as const,
-        reflection: 'Transaction processed - analysis unavailable'
+        classification: 'neutral' as const,
+        reflection: 'Transaction processed - analysis unavailable',
+        confidence: 0.5,
+        reasoning: 'LLM analysis failed'
       }
     }
 
@@ -230,6 +232,9 @@ export async function POST(request: NextRequest) {
 // GET endpoint to retrieve recent transactions for an account
 export async function GET(request: NextRequest) {
   try {
+    // Create server client that bypasses RLS
+    const supabase = createServerClient()
+    
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const accountId = searchParams.get('accountId')
