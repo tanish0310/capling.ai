@@ -11,17 +11,16 @@ import { GoalCard } from "@/components/goal-card"
 import { BadgeCard } from "@/components/badge-card"
 import { Wallet, Target, TrendingUp, Plus, Home, Receipt, Trophy, Menu, AlertCircle, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useSupabaseData, type CaplingTransaction } from "@/hooks/use-supabase-data"
+import { useSupabaseData } from "@/hooks/use-supabase-data"
 import { useGoals, type Goal } from "@/hooks/use-goals"
 import { AddTransactionModal } from "@/components/add-transaction-modal"
 import { GoalModal } from "@/components/goal-modal"
-import { DemoNotice } from "@/components/demo-notice"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { UserMenu } from "@/components/auth/user-menu"
 import { AuthForm } from "@/components/auth/auth-form"
 import { SimpleDemo } from "@/components/simple-demo"
-import { TransactionSimulator } from "@/components/transaction-simulator"
 import { useAuth } from "@/contexts/auth-context"
+import { OnboardingForm } from "@/components/onboarding-form"
 import Link from "next/link"
 
 export default function CaplingApp() {
@@ -33,44 +32,30 @@ export default function CaplingApp() {
 }
 
 function AppRouter() {
-  const { user } = useAuth()
-  const [supabaseAvailable, setSupabaseAvailable] = useState<boolean | null>(null)
+  const { user, needsOnboarding, completeOnboarding, clearAuthState } = useAuth()
 
-  // Check if Supabase is available
-  useEffect(() => {
-    const checkSupabase = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:54321/rest/v1/', {
-          method: 'HEAD',
-        })
-        setSupabaseAvailable(response.ok)
-      } catch (error) {
-        setSupabaseAvailable(false)
-      }
-    }
-    checkSupabase()
-  }, [])
-
-  // Show loading while checking Supabase availability
-  if (supabaseAvailable === null) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Checking connection...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // If Supabase is not available, show demo mode
-  if (!supabaseAvailable) {
-    return <SimpleDemo />
-  }
 
   // If Supabase is available but user is not logged in, show auth form
   if (!user) {
     return <AuthForm />
+  }
+
+  // If user needs onboarding, show onboarding form
+  if (needsOnboarding) {
+    return (
+      <OnboardingForm 
+        userId={user?.id || ''}
+        userEmail={user?.email || ''}
+        onComplete={async () => {
+          completeOnboarding()
+          // Small delay to ensure database changes are committed
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          // Refresh the page to reload all data
+          window.location.reload()
+        }}
+        onClearAuth={clearAuthState}
+      />
+    )
   }
 
   // Otherwise show the regular app
@@ -78,13 +63,12 @@ function AppRouter() {
 }
 
 function CaplingAppContent() {
-  const { user } = useAuth()
+  const { user, needsOnboarding } = useAuth()
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [addTransactionOpen, setAddTransactionOpen] = useState(false)
   const [addGoalOpen, setAddGoalOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
-
   // Use Supabase data system
   const {
     loading,
@@ -94,9 +78,19 @@ function CaplingAppContent() {
     currentBalance,
     weeklyBudget,
     spendingInsights,
+    userProfile,
     createTransaction,
     refreshData,
   } = useSupabaseData()
+
+  const [caplingName, setCaplingName] = useState<string>("Capling")
+
+  // Update Capling name when user profile loads
+  useEffect(() => {
+    if (userProfile && 'capling_name' in userProfile && userProfile.capling_name) {
+      setCaplingName(userProfile.capling_name as string)
+    }
+  }, [userProfile])
 
   // Use goals system
   const {
@@ -122,6 +116,12 @@ function CaplingAppContent() {
   const handleTransactionClick = (transaction: Transaction) => {
     setSelectedTransaction(transaction)
     setModalOpen(true)
+  }
+
+  const handleCaplingNameUpdate = (newName: string) => {
+    setCaplingName(newName)
+    // Refresh data to get updated profile
+    refreshData()
   }
 
   const handleAddTransaction = async (transactionData: any) => {
@@ -229,7 +229,7 @@ function CaplingAppContent() {
                 <h1 className="text-2xl font-bold text-foreground">Capling</h1>
                 {user && (
                   <p className="text-sm text-muted-foreground">
-                    Welcome, {user.user_metadata?.full_name || user.email}!
+                    Welcome, {user?.user_metadata?.full_name || user?.email}!
                   </p>
                 )}
               </div>
@@ -248,7 +248,7 @@ function CaplingAppContent() {
               </Button>
               <div className="flex items-center gap-2">
                 <div className="text-xs text-muted-foreground">
-                  ID: {user.id.slice(0, 8)}...
+                  ID: {user?.id?.slice(0, 8)}...
                 </div>
                 <Link href="/test-api">
                   <Button variant="outline" size="sm">
@@ -262,8 +262,8 @@ function CaplingAppContent() {
         </div>
       </header>
 
+
       <main className="container mx-auto px-4 py-6 max-w-6xl">
-        <DemoNotice />
         <Tabs defaultValue="home" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="home" className="gap-2">
@@ -287,7 +287,13 @@ function CaplingAppContent() {
               <div className="flex flex-col items-center text-center space-y-8">
                 {/* Capling Character - Centered and Large */}
                 <div className="flex justify-center">
-                  <CaplingCharacter mood={getMood()} />
+                  <CaplingCharacter 
+                    mood={getMood()} 
+                    name={caplingName}
+                    showNameEditor={true}
+                    onNameUpdate={handleCaplingNameUpdate}
+                    userId={user?.id}
+                  />
                 </div>
                 
                 {/* Welcome Message */}
@@ -321,7 +327,15 @@ function CaplingAppContent() {
               </div>
             </div>
 
-            <BudgetProgress spent={weeklySpending} budget={weeklyBudget} />
+            <BudgetProgress 
+              spent={weeklySpending} 
+              budget={weeklyBudget}
+              userId={user?.id || ''}
+              onBudgetUpdate={(newBudget) => {
+                // Update the local state or trigger a refresh
+                refreshData()
+              }}
+            />
 
             <div className="grid gap-4 md:grid-cols-3">
               <SummaryCard
@@ -386,12 +400,6 @@ function CaplingAppContent() {
                 Add Transaction
               </Button>
               
-              {/* Transaction Simulator */}
-              <TransactionSimulator
-                userId={user.id}
-                accountId={currentAccount?.id}
-                onTransactionsAdded={refreshData}
-              />
             </div>
           </TabsContent>
 
@@ -519,7 +527,7 @@ function CaplingAppContent() {
         onOpenChange={setAddTransactionOpen} 
         onTransactionAdded={handleAddTransaction}
         accountId={currentAccount?.id || ''}
-        userId={user.id}
+        userId={user?.id || ''}
       />
       <GoalModal
         open={addGoalOpen}
