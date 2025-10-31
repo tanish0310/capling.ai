@@ -99,7 +99,7 @@ async function testTransactionAPI() {
     
     const result = await response.json()
     console.log('✅ Simulation result:', result)
-  } catch (error) {
+   } catch (error) {
     console.error('❌ Simulation test failed:', error)
   }
   
