@@ -36,11 +36,11 @@ export function JustificationModal({ open, onOpenChange, transaction }: Justific
         reflection: "Great choice! This purchase aligns with your goals.",
       },
       {
-        classification: "Borderline",
+        classification: "Neutral",
         reflection: "Consider if this is a need or a want. Try waiting 24 hours.",
       },
       {
-        classification: "Impulsive",
+        classification: "Irresponsible",
         reflection: "Try meal prepping next week — that's $40 saved.",
       },
     ]
@@ -102,7 +102,7 @@ export function JustificationModal({ open, onOpenChange, transaction }: Justific
                   <span className="text-3xl">
                     {aiResponse.classification === "Responsible"
                       ? "✓"
-                      : aiResponse.classification === "Borderline"
+                      : aiResponse.classification === "Neutral"
                         ? "⚠"
                         : "✕"}
                   </span>
