@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { ShoppingBag, Coffee, Car, Home, Utensils, Gamepad2, Heart, DollarSign, type LucideIcon } from "lucide-react"
 
 type TransactionCategory = "shopping" | "food" | "transport" | "bills" | "dining" | "entertainment" | "health" | "income"
-type TransactionClassification = "responsible" | "borderline" | "impulsive"
+type TransactionClassification = "responsible" | "irresponsible" | "neutral"
 
 interface Transaction {
   id: string
@@ -40,16 +40,16 @@ export function TransactionItem({ transaction, onClick }: TransactionItemProps) 
     switch (transaction.classification) {
       case "responsible":
         return <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">✓ Responsible</Badge>
-      case "borderline":
+      case "neutral":
         return (
           <Badge className="bg-secondary/10 text-secondary-foreground hover:bg-secondary/20 border-secondary/20">
-            ⚠ Borderline
+            ⚠ Neutral
           </Badge>
         )
-      case "impulsive":
+      case "irresponsible":
         return (
           <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20">
-            ✕ Impulsive
+            ✕ Irresponsible
           </Badge>
         )
     }
