@@ -29,6 +29,7 @@ export function OnboardingForm({ userId, userEmail, onComplete, onClearAuth }: O
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [weeklyBudget, setWeeklyBudget] = useState('')
+  const [initialBalance, setInitialBalance] = useState('')
   const [goals, setGoals] = useState<Goal[]>([])
   const [newGoal, setNewGoal] = useState({
     title: '',
@@ -78,6 +79,7 @@ export function OnboardingForm({ userId, userEmail, onComplete, onClearAuth }: O
       const requestData = {
         userId,
         weeklyBudget: parseFloat(weeklyBudget),
+        initialBalance: parseFloat(initialBalance),
         goals: goals.length > 0 ? goals : undefined
       }
       
@@ -112,6 +114,8 @@ export function OnboardingForm({ userId, userEmail, onComplete, onClearAuth }: O
   const nextStep = () => {
     if (step === 1 && weeklyBudget) {
       setStep(2)
+    } else if (step === 2 && initialBalance) {
+      setStep(3)
     }
   }
 
@@ -191,14 +195,70 @@ export function OnboardingForm({ userId, userEmail, onComplete, onClearAuth }: O
                 disabled={!weeklyBudget}
                 className="px-8"
               >
+                Next: Set Account Balance
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Initial Account Balance */}
+        {step === 2 && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <DollarSign className="h-12 w-12 mx-auto mb-4 text-primary" />
+              <h2 className="text-2xl font-semibold mb-2">Set Your Initial Account Balance</h2>
+              <p className="text-muted-foreground">
+                What's your current account balance?
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="balance">Current Balance ($)</Label>
+                <Input
+                  id="balance"
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g., 1500.00"
+                  value={initialBalance}
+                  onChange={(e) => setInitialBalance(e.target.value)}
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="font-semibold">Starter</div>
+                  <div className="text-muted-foreground">$0-500</div>
+                </div>
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="font-semibold">Comfortable</div>
+                  <div className="text-muted-foreground">$500-2000</div>
+                </div>
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="font-semibold">Well-off</div>
+                  <div className="text-muted-foreground">$2000+</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={prevStep}>
+                Back
+              </Button>
+              <Button 
+                onClick={nextStep} 
+                disabled={!initialBalance}
+                className="px-8"
+              >
                 Next: Set Goals
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 2: Goals */}
-        {step === 2 && (
+        {/* Step 3: Goals */}
+        {step === 3 && (
           <div className="space-y-6">
             <div className="text-center">
               <Target className="h-12 w-12 mx-auto mb-4 text-primary" />

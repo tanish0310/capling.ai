@@ -3,16 +3,16 @@ import { createServerClient } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, weeklyBudget, goals } = await request.json();
+    const { userId, weeklyBudget, initialBalance, goals } = await request.json();
     
-    console.log('Received onboarding data:', { userId, weeklyBudget, goals });
+    console.log('Received onboarding data:', { userId, weeklyBudget, initialBalance, goals });
     console.log('Goals type:', typeof goals);
     console.log('Goals is array:', Array.isArray(goals));
     console.log('Goals length:', goals?.length);
 
-    if (!userId || !weeklyBudget) {
+    if (!userId || !weeklyBudget || initialBalance === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields: userId, weeklyBudget' },
+        { error: 'Missing required fields: userId, weeklyBudget, initialBalance' },
         { status: 400 }
       );
     }
@@ -31,6 +31,21 @@ export async function POST(request: NextRequest) {
       console.error('Error updating profile:', profileError);
       return NextResponse.json(
         { error: 'Failed to update profile', details: profileError.message },
+        { status: 500 }
+      );
+    }
+
+    // Update the account balance (the account was created by the trigger with a default balance)
+    const { error: accountError } = await supabase
+      .from('accounts')
+      .update({ balance: parseFloat(initialBalance) })
+      .eq('user_id', userId)
+      .eq('account_name', 'Main Checking');
+
+    if (accountError) {
+      console.error('Error updating account balance:', accountError);
+      return NextResponse.json(
+        { error: 'Failed to update account balance', details: accountError.message },
         { status: 500 }
       );
     }
