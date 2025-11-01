@@ -131,14 +131,19 @@ export async function POST(request: NextRequest) {
     // Get LLM analysis for the transaction
     let analysis
     try {
+      console.log('🔍 Starting LLM analysis for transaction:', { merchant, amount: transactionAmount, description })
+      const config = getLLMConfig()
+      console.log('🔧 LLM Config loaded:', { provider: config.provider, hasApiKey: !!config.apiKey })
+      
       analysis = await analyzeTransaction(
         merchant,
         transactionAmount,
         description || merchant,
-        getLLMConfig()
+        config
       )
+      console.log('✅ LLM analysis completed:', analysis)
     } catch (llmError) {
-      console.error('LLM analysis failed:', llmError)
+      console.error('❌ LLM analysis failed:', llmError)
       // Fallback analysis if LLM fails
       analysis = {
         classification: 'neutral' as const,
@@ -146,6 +151,7 @@ export async function POST(request: NextRequest) {
         confidence: 0.5,
         reasoning: 'LLM analysis failed'
       }
+      console.log('🔄 Using fallback analysis:', analysis)
     }
 
     // Create transaction date
@@ -158,6 +164,10 @@ export async function POST(request: NextRequest) {
       minute: '2-digit'
     })
 
+    // Determine if transaction needs justification
+    const needsJustification = analysis.classification === 'irresponsible' || analysis.classification === 'neutral'
+    const justificationStatus = needsJustification ? 'pending' : 'none'
+
     // Create the transaction record
     const transactionData = {
       user_id: userId,
@@ -166,11 +176,14 @@ export async function POST(request: NextRequest) {
       amount: transactionAmount,
       category: category || 'shopping',
       classification: analysis.classification,
+      original_classification: analysis.classification,
+      final_classification: analysis.classification,
       reflection: analysis.reflection,
       description: description || merchant,
       date: formattedDate,
       timestamp: transactionDate.getTime(),
-      type
+      type,
+      justification_status: justificationStatus
     }
 
     // Insert transaction into database
