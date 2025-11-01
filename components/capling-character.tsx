@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils"
 import { CaplingNameEditor } from "./capling-name-editor"
 
-type CaplingMood = "happy" | "neutral" | "worried" | "sad"
+type CaplingMood = "happy" | "neutral" | "worried" | "sad" | "depressed"
 
 interface CaplingCharacterProps {
   mood: CaplingMood
@@ -47,6 +47,16 @@ function DinosaurSVG({ mood }: { mood: CaplingMood }) {
             <path d="M 63 48 Q 65 46 67 48" stroke="#2d3748" strokeWidth="2" fill="none" strokeLinecap="round" />
           </>
         )
+      case "depressed":
+        return (
+          <>
+            <path d="M 33 48 Q 35 46 37 48" stroke="#2d3748" strokeWidth="2" fill="none" strokeLinecap="round" />
+            <path d="M 63 48 Q 65 46 67 48" stroke="#2d3748" strokeWidth="2" fill="none" strokeLinecap="round" />
+            {/* Tears */}
+            <circle cx="35" cy="52" r="1" fill="#3b82f6" opacity="0.7" />
+            <circle cx="65" cy="52" r="1" fill="#3b82f6" opacity="0.7" />
+          </>
+        )
     }
   }
 
@@ -60,6 +70,8 @@ function DinosaurSVG({ mood }: { mood: CaplingMood }) {
         return <path d="M 35 65 Q 50 62 65 65" stroke="#2d3748" strokeWidth="2" fill="none" strokeLinecap="round" />
       case "sad":
         return <path d="M 35 65 Q 50 58 65 65" stroke="#2d3748" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      case "depressed":
+        return <path d="M 35 68 Q 50 62 65 68" stroke="#2d3748" strokeWidth="3" fill="none" strokeLinecap="round" />
     }
   }
 
@@ -130,6 +142,8 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
         return "from-yellow-400 to-orange-500"
       case "sad":
         return "from-red-400 to-pink-500"
+      case "depressed":
+        return "from-gray-600 to-gray-800"
       default:
         return "from-green-400 to-emerald-500"
     }
@@ -145,6 +159,8 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
         return "😟"
       case "sad":
         return "😢"
+      case "depressed":
+        return "💔"
       default:
         return "😊"
     }
@@ -160,6 +176,8 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
         return "Let's be more careful!"
       case "sad":
         return "We can do better!"
+      case "depressed":
+        return "We need to fix this!"
       default:
         return "Great job! Keep it up!"
     }
@@ -169,7 +187,7 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
     <div className={cn("flex flex-col items-center gap-6", className)}>
       {/* Name and edit button above the character */}
       <div className="text-center">
-        <div className="flex items-center justify-center gap-2">
+        <div className="relative inline-flex items-center gap-2">
           <h3 className="text-2xl font-bold text-foreground">{name}</h3>
           {showNameEditor && onNameUpdate && userId && (
             <CaplingNameEditor
