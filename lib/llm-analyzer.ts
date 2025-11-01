@@ -8,6 +8,13 @@ export interface TransactionAnalysis {
   reasoning: string
 }
 
+export interface JustificationAnalysis {
+  isValid: boolean
+  reasoning: string
+  newReflection: string
+  confidence: number
+}
+
 export interface LLMConfig {
   provider: 'openai' | 'anthropic' | 'mock'
   apiKey?: string
@@ -296,6 +303,10 @@ const analyzeWithOpenAI = async (
     
     const prompt = createAnalysisPrompt(merchant, amount, description)
     
+    // Add timeout to prevent hanging
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -316,8 +327,11 @@ const analyzeWithOpenAI = async (
         ],
         temperature: 0.7,
         max_tokens: 300
-      })
+      }),
+      signal: controller.signal
     })
+
+    clearTimeout(timeoutId)
 
     console.log('📡 OpenAI API response status:', response.status)
 
@@ -335,6 +349,10 @@ const analyzeWithOpenAI = async (
     // Parse the response to extract structured data
     return parseAnalysisResponse(analysisText, merchant, amount, description)
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('❌ OpenAI API call timed out after 10 seconds')
+      throw new Error('OpenAI API call timed out')
+    }
     console.error('❌ API analysis failed:', error)
     // Fallback to mock analysis
     return generateMockAnalysis(merchant, amount, description)
@@ -446,4 +464,204 @@ export const getLLMConfig = (): LLMConfig => {
   })
   
   return config
+}
+
+// Analyze user justification for a transaction
+export const analyzeJustification = async (
+  merchant: string,
+  amount: number,
+  description: string,
+  justification: string,
+  originalClassification: string
+): Promise<JustificationAnalysis> => {
+  try {
+    console.log('🤖 Analyzing justification:', { merchant, amount, justification })
+    
+    const config = getLLMConfig()
+    
+    if (config.provider === 'openai' && config.apiKey) {
+      return await analyzeJustificationWithOpenAI(merchant, amount, description, justification, originalClassification, config)
+    } else {
+      // Fallback to mock analysis
+      return generateMockJustificationAnalysis(merchant, amount, justification)
+    }
+  } catch (error) {
+    console.error('❌ Justification analysis failed:', error)
+    // Fallback analysis
+    return {
+      isValid: false,
+      reasoning: 'Unable to analyze justification',
+      newReflection: 'Justification could not be evaluated',
+      confidence: 0.5
+    }
+  }
+}
+
+// OpenAI-based justification analysis
+const analyzeJustificationWithOpenAI = async (
+  merchant: string,
+  amount: number,
+  description: string,
+  justification: string,
+  originalClassification: string,
+  config: LLMConfig
+): Promise<JustificationAnalysis> => {
+  try {
+    const prompt = createJustificationPrompt(merchant, amount, description, justification, originalClassification)
+    
+    // Add timeout to prevent hanging
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a financial advisor helping users understand their spending decisions. Evaluate justifications fairly and provide constructive feedback.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 300
+      }),
+      signal: controller.signal
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('❌ OpenAI API error:', response.status, errorData)
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`)
+    }
+
+    const result = await response.json()
+    const analysisText = result.choices[0]?.message?.content || 'Unable to analyze justification'
+    
+    return parseJustificationResponse(analysisText, merchant, amount, justification)
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('❌ OpenAI API call timed out after 10 seconds')
+      throw new Error('OpenAI API call timed out')
+    }
+    console.error('❌ Justification analysis failed:', error)
+    throw error
+  }
+}
+
+// Create prompt for justification analysis
+const createJustificationPrompt = (
+  merchant: string,
+  amount: number,
+  description: string,
+  justification: string,
+  originalClassification: string
+): string => {
+  return `Please analyze this spending justification:
+
+TRANSACTION:
+- Merchant: ${merchant}
+- Amount: $${amount}
+- Description: ${description}
+- Original Classification: ${originalClassification}
+
+USER JUSTIFICATION:
+"${justification}"
+
+Please evaluate whether this justification is valid and reasonable. Consider:
+1. Is the justification logical and well-reasoned?
+2. Does it provide context that changes the spending decision?
+3. Is it a legitimate reason for the purchase?
+4. Does it show financial awareness and responsibility?
+
+Respond in JSON format:
+{
+  "isValid": true/false,
+  "reasoning": "Brief explanation of your decision",
+  "newReflection": "Updated reflection message for the user",
+  "confidence": 0.0-1.0
+}
+
+Examples:
+- Valid: "I needed this for work" (for work-related purchases)
+- Valid: "It was on sale and I've been saving for it" (planned purchase)
+- Invalid: "I was bored" (impulsive spending)
+- Invalid: "I deserve it" (without context)`
+}
+
+// Parse justification analysis response
+const parseJustificationResponse = (
+  analysisText: string,
+  merchant: string,
+  amount: number,
+  justification: string
+): JustificationAnalysis => {
+  try {
+    // Try to parse as JSON first
+    const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      return {
+        isValid: parsed.isValid || false,
+        reasoning: parsed.reasoning || 'Analysis completed',
+        newReflection: parsed.newReflection || 'Justification evaluated',
+        confidence: parsed.confidence || 0.8
+      }
+    }
+  } catch (jsonError) {
+    // If JSON parsing fails, continue with text parsing
+  }
+  
+  // Fallback to text parsing
+  const isValid = analysisText.toLowerCase().includes('valid') && 
+                  !analysisText.toLowerCase().includes('not valid') &&
+                  !analysisText.toLowerCase().includes('invalid')
+  
+  return {
+    isValid,
+    reasoning: analysisText,
+    newReflection: isValid 
+      ? 'Your justification was accepted! This was a thoughtful purchase decision.'
+      : 'Your justification was not sufficient to change the classification.',
+    confidence: 0.7
+  }
+}
+
+// Mock justification analysis for testing
+const generateMockJustificationAnalysis = (
+  merchant: string,
+  amount: number,
+  justification: string
+): JustificationAnalysis => {
+  const justificationLower = justification.toLowerCase()
+  
+  // Simple heuristics for mock analysis
+  const validKeywords = ['work', 'needed', 'emergency', 'planned', 'sale', 'discount', 'gift', 'repair', 'medical']
+  const invalidKeywords = ['bored', 'impulse', 'deserve', 'treat', 'whatever', 'idk', 'dunno']
+  
+  const hasValidKeywords = validKeywords.some(keyword => justificationLower.includes(keyword))
+  const hasInvalidKeywords = invalidKeywords.some(keyword => justificationLower.includes(keyword))
+  
+  const isValid = hasValidKeywords && !hasInvalidKeywords && justification.length > 10
+  
+  return {
+    isValid,
+    reasoning: isValid 
+      ? 'Your justification shows thoughtful consideration for this purchase.'
+      : 'Your justification could be more specific about why this purchase was necessary.',
+    newReflection: isValid
+      ? 'Great justification! This shows you\'re thinking carefully about your spending decisions.'
+      : 'Consider being more specific about why purchases are necessary in the future.',
+    confidence: 0.8
+  }
 }
