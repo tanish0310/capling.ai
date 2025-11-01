@@ -16,13 +16,17 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 
 function TestAPIContent() {
   const { user } = useAuth()
-  const { currentAccount } = useSupabaseData()
+  const { currentAccount, loading: dataLoading } = useSupabaseData()
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [transactionForm, setTransactionForm] = useState({
     merchant: '',
     amount: '',
     category: 'shopping',
+    description: ''
+  })
+  const [depositForm, setDepositForm] = useState({
+    amount: '',
     description: ''
   })
 
@@ -37,12 +41,28 @@ function TestAPIContent() {
     )
   }
 
-  if (!currentAccount) {
+  if (dataLoading) {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="text-center">
           <h1 className="text-3xl font-bold">API Testing Dashboard</h1>
           <p className="text-muted-foreground">Loading your account...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentAccount) {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">API Testing Dashboard</h1>
+          <p className="text-muted-foreground">No account found. Please complete onboarding first.</p>
+          <div className="mt-4">
+            <Button onClick={() => window.location.href = '/'}>
+              Go to Main App
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -79,6 +99,28 @@ function TestAPIContent() {
       addResult('Fake Bank API', response.ok, result, response.ok ? undefined : result.error)
     } catch (error) {
       addResult('Fake Bank API', false, null, error instanceof Error ? error.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const testLLM = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/test-llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchant: 'Starbucks',
+          amount: 5.50,
+          description: 'Morning coffee'
+        })
+      })
+
+      const result = await response.json()
+      addResult('LLM Test (Mock)', response.ok, result, response.ok ? undefined : result.error)
+    } catch (error) {
+      addResult('LLM Test (Mock)', false, null, error instanceof Error ? error.message : 'Unknown error')
     } finally {
       setLoading(false)
     }
@@ -152,6 +194,52 @@ function TestAPIContent() {
       }
     } catch (error) {
       addResult('Custom Transaction', false, null, error instanceof Error ? error.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const makeDeposit = async () => {
+    setLoading(true)
+    try {
+      // Validate form
+      if (!depositForm.amount) {
+        addResult('Deposit', false, null, 'Please enter deposit amount')
+        return
+      }
+
+      const amount = parseFloat(depositForm.amount)
+      if (isNaN(amount) || amount <= 0) {
+        addResult('Deposit', false, null, 'Please enter a valid positive amount')
+        return
+      }
+
+      console.log('Making deposit:', { amount, description: depositForm.description })
+
+      const response = await fetch('/api/process-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          merchant: 'Deposit',
+          amount: -amount, // Negative amount to make it a credit (deposit)
+          category: 'income',
+          description: depositForm.description || 'Test deposit'
+        })
+      })
+
+      const result = await response.json()
+      
+      if (response.ok) {
+        addResult('Deposit', true, result, `Successfully deposited $${amount}`)
+        // Clear form
+        setDepositForm({ amount: '', description: '' })
+      } else {
+        addResult('Deposit', false, result, result.error || 'Deposit failed')
+      }
+    } catch (error) {
+      console.error('Deposit error:', error)
+      addResult('Deposit', false, null, `Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -298,10 +386,77 @@ function TestAPIContent() {
           </div>
         </Card>
 
+        {/* Deposit Form */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Make Deposit</h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="deposit-amount">Amount ($)</Label>
+                <Input
+                  id="deposit-amount"
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g., 100.00, 500.00"
+                  value={depositForm.amount}
+                  onChange={(e) => setDepositForm(prev => ({ ...prev, amount: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deposit-description">Description (Optional)</Label>
+                <Input
+                  id="deposit-description"
+                  placeholder="e.g., Paycheck, Gift, Refund"
+                  value={depositForm.description}
+                  onChange={(e) => setDepositForm(prev => ({ ...prev, description: e.target.value }))}
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Current Balance: ${currentAccount?.balance?.toFixed(2) || '0.00'}</span>
+              {currentAccount?.balance && currentAccount.balance < 0 && (
+                <Badge variant="destructive">In Debt</Badge>
+              )}
+            </div>
+            
+            {/* Quick Deposit Buttons */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Quick Deposits:</Label>
+              <div className="flex flex-wrap gap-2">
+                {[100, 250, 500, 1000].map((amount) => (
+                  <Button
+                    key={amount}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDepositForm(prev => ({ ...prev, amount: amount.toString() }))}
+                    disabled={loading}
+                  >
+                    ${amount}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <Button 
+              onClick={makeDeposit} 
+              disabled={loading || !depositForm.amount} 
+              className="w-full bg-green-600 hover:bg-green-700 text-lg py-6"
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
+              Make Deposit
+            </Button>
+          </div>
+        </Card>
+
         {/* Other Tests */}
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Other Tests</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button onClick={testLLM} disabled={loading} variant="outline" className="text-lg py-6">
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
+              Test LLM (Mock)
+            </Button>
             <Button onClick={testFakeBank} disabled={loading} variant="outline" className="text-lg py-6">
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
               Test Fake Bank API

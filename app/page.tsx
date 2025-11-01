@@ -13,6 +13,8 @@ import { Wallet, Target, TrendingUp, Plus, Home, Receipt, Trophy, Menu, AlertCir
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 import { useGoals, type Goal } from "@/hooks/use-goals"
+import { useBadges } from "@/hooks/use-badges"
+import { BadgeNotification } from "@/components/badge-notification"
 import { AddTransactionModal } from "@/components/add-transaction-modal"
 import { GoalModal } from "@/components/goal-modal"
 import { ProtectedRoute } from "@/components/auth/protected-route"
@@ -102,15 +104,145 @@ function CaplingAppContent() {
     deleteGoal,
   } = useGoals()
 
+  // Use badge system
+  const {
+    badges,
+    newBadge,
+    showNotification,
+    dismissNotification
+  } = useBadges()
+
   const weeklySpending = spendingInsights.totalSpent
   const reflectionScore = Math.round(spendingInsights.responsiblePercentage) || 75
 
   const getMood = () => {
-    const percentage = (weeklySpending / weeklyBudget) * 100
-    if (percentage < 50) return "happy"
-    if (percentage < 80) return "neutral"
-    if (percentage < 100) return "worried"
+    if (!transactions || transactions.length === 0) return "neutral"
+    
+    // Check if user is in debt (negative account balance) - this overrides everything else
+    if (currentAccount && currentAccount.balance < 0) {
+      return "depressed"
+    }
+    
+    // Get recent transactions (last 7 days)
+    const now = new Date()
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const recentTransactions = transactions.filter(tx => {
+      const txDate = new Date(tx.timestamp)
+      return txDate >= weekAgo
+    })
+    
+    // Calculate budget percentage
+    const budgetPercentage = (weeklySpending / weeklyBudget) * 100
+    
+    // Analyze transaction classifications
+    const responsibleCount = recentTransactions.filter(tx => tx.classification === 'responsible').length
+    const irresponsibleCount = recentTransactions.filter(tx => tx.classification === 'irresponsible').length
+    const neutralCount = recentTransactions.filter(tx => tx.classification === 'neutral').length
+    const totalRecent = recentTransactions.length
+    
+    // Calculate responsible spending ratio
+    const responsibleRatio = totalRecent > 0 ? responsibleCount / totalRecent : 0.5
+    
+    // Check for concerning patterns
+    const largeTransactions = recentTransactions.filter(tx => tx.amount > 100).length
+    const frequentIrresponsible = irresponsibleCount >= 3
+    const overBudget = budgetPercentage > 100
+    const highIrresponsibleRatio = totalRecent > 0 && (irresponsibleCount / totalRecent) > 0.6
+    
+    // Calculate mood score (0-100, higher = happier)
+    let moodScore = 50 // Start neutral
+    
+    // Budget factor (40% weight)
+    if (budgetPercentage < 50) moodScore += 20
+    else if (budgetPercentage < 80) moodScore += 10
+    else if (budgetPercentage < 100) moodScore -= 10
+    else moodScore -= 30
+    
+    // Responsible spending factor (35% weight)
+    if (responsibleRatio > 0.7) moodScore += 15
+    else if (responsibleRatio > 0.5) moodScore += 5
+    else if (responsibleRatio > 0.3) moodScore -= 10
+    else moodScore -= 20
+    
+    // Pattern analysis (25% weight)
+    if (frequentIrresponsible) moodScore -= 15
+    if (highIrresponsibleRatio) moodScore -= 10
+    if (largeTransactions > 2) moodScore -= 10
+    if (overBudget) moodScore -= 15
+    
+    // Determine mood based on score
+    if (moodScore >= 70) return "happy"
+    if (moodScore >= 45) return "neutral"
+    if (moodScore >= 25) return "worried"
     return "sad"
+  }
+
+  const getMoodMessage = () => {
+    if (!transactions || transactions.length === 0) {
+      return "Capling is excited to help you track your spending! Start by adding your first transaction."
+    }
+    
+    const mood = getMood()
+    const now = new Date()
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const recentTransactions = transactions.filter(tx => {
+      const txDate = new Date(tx.timestamp)
+      return txDate >= weekAgo
+    })
+    
+    const budgetPercentage = (weeklySpending / weeklyBudget) * 100
+    const responsibleCount = recentTransactions.filter(tx => tx.classification === 'responsible').length
+    const irresponsibleCount = recentTransactions.filter(tx => tx.classification === 'irresponsible').length
+    const totalRecent = recentTransactions.length
+    const responsibleRatio = totalRecent > 0 ? responsibleCount / totalRecent : 0.5
+    
+    switch (mood) {
+      case "happy":
+        if (responsibleRatio > 0.7 && budgetPercentage < 60) {
+          return "Capling is absolutely thrilled! You're making excellent financial decisions and staying well within budget. You're a spending superstar! 🌟"
+        } else if (responsibleRatio > 0.6) {
+          return "Capling is proud of your responsible spending choices! You're making smart decisions that will pay off in the long run. Keep it up! 💪"
+        } else {
+          return "Capling is happy with your progress! You're managing your budget well and making mostly good choices. Great job! 😊"
+        }
+        
+      case "neutral":
+        if (budgetPercentage > 80 && responsibleRatio < 0.5) {
+          return "Capling notices you're getting close to your budget limit and making some questionable purchases. Let's focus on more responsible choices! 🤔"
+        } else if (budgetPercentage > 80) {
+          return "Capling is keeping an eye on your spending. You're approaching your budget limit, but your choices are mostly responsible. Stay mindful! 👀"
+        } else if (responsibleRatio < 0.4) {
+          return "Capling sees you're staying within budget, but some of your recent purchases could be more thoughtful. Let's work on better decision-making! 💭"
+        } else {
+          return "Capling thinks you're doing okay overall, but there's definitely room for improvement in your spending habits. Small changes can make a big difference! 📈"
+        }
+        
+      case "worried":
+        if (budgetPercentage > 100) {
+          return "Capling is concerned! You've exceeded your budget and made several questionable purchases. Let's create a plan to get back on track! 🚨"
+        } else if (irresponsibleCount >= 3) {
+          return "Capling is worried about your recent spending patterns. You've made multiple irresponsible purchases lately. Let's break this cycle! ⚠️"
+        } else if (responsibleRatio < 0.3) {
+          return "Capling is concerned about your spending choices. Most of your recent purchases have been classified as irresponsible. Time for a spending reset! 🔄"
+        } else {
+          return "Capling is getting worried about your spending habits. You're making some concerning choices that could impact your financial health. Let's talk! 💬"
+        }
+        
+      case "sad":
+        if (budgetPercentage > 120) {
+          return "Capling is really sad about your spending situation. You're way over budget and making many poor financial decisions. We need to take action now! 😢"
+        } else if (irresponsibleCount >= 5) {
+          return "Capling is heartbroken by your recent spending choices. You've made too many irresponsible purchases in a short time. Let's turn this around together! 💔"
+        } else {
+          return "Capling is saddened by your current spending patterns. Your financial choices are concerning and need immediate attention. Don't worry, we'll fix this! 🤗"
+        }
+        
+      case "depressed":
+        return "Capling is deeply concerned and depressed about your financial situation. Your account is in the negative, which is a serious problem that needs immediate attention. Let's work together to get you back on track! 💔"
+        
+      default:
+        return "Capling is here to help you with your financial journey!"
+    }
   }
 
   const handleTransactionClick = (transaction: Transaction) => {
@@ -176,6 +308,9 @@ function CaplingAppContent() {
     classification: supabaseTx.classification,
     reflection: supabaseTx.reflection,
     date: supabaseTx.date,
+    justification_status: supabaseTx.justification_status,
+    original_classification: supabaseTx.original_classification,
+    final_classification: supabaseTx.final_classification,
   })
 
   // Show loading state
@@ -246,16 +381,11 @@ function CaplingAppContent() {
               <Button variant="ghost" size="icon" onClick={refreshData}>
                 <RefreshCw className="h-5 w-5" />
               </Button>
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-muted-foreground">
-                  ID: {user?.id?.slice(0, 8)}...
-                </div>
-                <Link href="/test-api">
-                  <Button variant="outline" size="sm">
-                    Test API
-                  </Button>
-                </Link>
-              </div>
+              <Link href="/test-api">
+                <Button variant="outline" size="sm">
+                  Test API
+                </Button>
+              </Link>
               <UserMenu />
             </div>
           </div>
@@ -302,10 +432,7 @@ function CaplingAppContent() {
                     Welcome back!
                   </h1>
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    {getMood() === 'happy' && "Capling is proud of your spending habits! Keep up the great work!"}
-                    {getMood() === 'neutral' && "Capling is watching your spending. You're doing okay, but there's room to improve!"}
-                    {getMood() === 'worried' && "Capling is a bit concerned about your spending. Let's work together to get back on track!"}
-                    {getMood() === 'sad' && "Capling is worried about your spending. Don't worry, we'll help you get back on track!"}
+                    {getMoodMessage()}
                   </p>
                 </div>
                 
@@ -378,6 +505,13 @@ function CaplingAppContent() {
                     key={transaction.id}
                     transaction={convertToTransaction(transaction)}
                     onClick={() => handleTransactionClick(convertToTransaction(transaction))}
+                    onJustificationSubmitted={(transactionId, justification) => {
+                      console.log('Justification submitted for transaction:', transactionId)
+                      // Refresh data to show updated classification and budget changes
+                      setTimeout(() => {
+                        refreshData()
+                      }, 1000) // Small delay to ensure database updates are complete
+                    }}
                   />
                 ))}
                 {transactions.length === 0 && (
@@ -422,6 +556,13 @@ function CaplingAppContent() {
                   key={transaction.id}
                   transaction={convertToTransaction(transaction)}
                   onClick={() => handleTransactionClick(convertToTransaction(transaction))}
+                  onJustificationSubmitted={(transactionId, justification) => {
+                    console.log('Justification submitted for transaction:', transactionId)
+                    // Refresh data to show updated classification and budget changes
+                    setTimeout(() => {
+                      refreshData()
+                    }, 1000) // Small delay to ensure database updates are complete
+                  }}
                 />
               ))}
               {transactions.length === 0 && (
@@ -487,35 +628,25 @@ function CaplingAppContent() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Badges & Achievements</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground">Badges & Achievements</h3>
+                <div className="text-sm text-muted-foreground">
+                  {badges.filter(b => b.earned).length} of {badges.length} earned
+                </div>
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <BadgeCard title="Smart Saver" description="Stayed under budget for 4 weeks" emoji="💰" earned={true} />
-                <BadgeCard
-                  title="Impulse Slayer"
-                  description="Avoided 10 impulsive purchases"
-                  emoji="🛡️"
-                  earned={true}
-                />
-                <BadgeCard
-                  title="Budget Master"
-                  description="Complete 12 weeks under budget"
-                  emoji="👑"
-                  earned={false}
-                />
-                <BadgeCard title="Goal Crusher" description="Achieve 5 savings goals" emoji="🎯" earned={false} />
+                {badges.map((badge) => (
+                  <BadgeCard
+                    key={badge.id}
+                    title={badge.title}
+                    description={badge.description}
+                    emoji={badge.emoji}
+                    earned={badge.earned}
+                  />
+                ))}
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Weekly Streak</h3>
-              <div className="flex items-center gap-2 p-6 rounded-xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
-                <div className="flex-1">
-                  <p className="text-3xl font-bold text-foreground">7 Days</p>
-                  <p className="text-sm text-muted-foreground">Keep it up! Capling is proud of you 🌟</p>
-                </div>
-                <div className="text-5xl animate-bounce-subtle">🔥</div>
-              </div>
-            </div>
           </TabsContent>
 
         </Tabs>
@@ -539,6 +670,15 @@ function CaplingAppContent() {
         editingGoal={editingGoal}
         onGoalUpdated={handleUpdateGoal}
       />
+
+      {/* Badge Notification */}
+      {newBadge && (
+        <BadgeNotification
+          badge={newBadge}
+          show={showNotification}
+          onComplete={dismissNotification}
+        />
+      )}
       
     </div>
   )
