@@ -29,7 +29,7 @@ const defaultConfig: LLMConfig = {
 
 // Transaction analysis prompt
 // Parse OpenAI response into structured analysis
-const parseAnalysisResponse = (analysisText: string, merchant: string, amount: number, description: string): TransactionAnalysis => {
+const parseAnalysisResponse = (analysisText: string, merchant: string, amount: number, description: string, accountBalance?: number): TransactionAnalysis => {
   try {
     // Try to parse as JSON first
     try {
@@ -80,21 +80,29 @@ const parseAnalysisResponse = (analysisText: string, merchant: string, amount: n
   } catch (error) {
     console.error('Error parsing analysis response:', error)
     // Fallback to mock analysis
-    return generateMockAnalysis(merchant, amount, description)
+    return generateMockAnalysis(merchant, amount, description, accountBalance)
   }
 }
 
-const createAnalysisPrompt = (merchant: string, amount: number, description: string) => {
+const createAnalysisPrompt = (merchant: string, amount: number, description: string, accountBalance?: number) => {
+  const balanceContext = accountBalance !== undefined 
+    ? `\n- Current Account Balance: $${accountBalance.toFixed(2)}`
+    : ''
+  
+  const affordabilityGuidance = accountBalance !== undefined
+    ? `\n\nConsider affordability: A $${amount.toFixed(2)} purchase represents ${((amount / accountBalance) * 100).toFixed(1)}% of the user's current balance.`
+    : ''
+
   return `You are Capling, a friendly financial advisor dinosaur. Analyze this transaction and provide personalized, encouraging feedback.
 
 Transaction Details:
 - Merchant: ${merchant}
 - Amount: $${amount.toFixed(2)}
-- Description: ${description}
+- Description: ${description}${balanceContext}${affordabilityGuidance}
 
 Classify this transaction as one of:
-- "responsible": Essential purchases, planned expenses, good value
-- "irresponsible": Unplanned, expensive, or potentially wasteful
+- "responsible": Essential purchases, planned expenses, good value, or affordable relative to balance
+- "irresponsible": Unplanned, expensive, potentially wasteful, or unaffordable relative to balance
 - "neutral": Neither particularly good nor bad
 
 Provide your analysis in this exact JSON format:
@@ -105,27 +113,33 @@ Provide your analysis in this exact JSON format:
   "reasoning": "Brief explanation of your decision (max 60 characters)"
 }
 
-Be specific about the merchant and amount. For example:
-- Starbucks $4.50 → "Your morning coffee ritual is worth it!"
-- Target $150 → "Target run! Hope you got everything you needed"
-- Porsche $100000 → "Whoa! That's a big purchase - was this planned?"
+Be specific about the merchant and amount. Consider affordability:
+- Starbucks $4.50 with $1000 balance → "Your morning coffee ritual is worth it!"
+- Target $150 with $500 balance → "This is 30% of your balance - consider alternatives"
+- Porsche $100000 with $50000 balance → "This exceeds your balance - not recommended"
 
 IMPORTANT: Do not use any emojis in the reflection field. Keep it text-only.
 
-Make it personal and relevant to the specific purchase. Be encouraging but honest.`
+Make it personal and relevant to the specific purchase. Be encouraging but honest about affordability.`
 }
 
 // Mock LLM response for development/fallback
-const generateMockAnalysis = (merchant: string, amount: number, description: string): TransactionAnalysis => {
+const generateMockAnalysis = (merchant: string, amount: number, description: string, accountBalance?: number): TransactionAnalysis => {
   const desc = (description || '').toLowerCase()
   const merchantLower = (merchant || '').toLowerCase()
+  
+  // Check affordability if account balance is provided
+  const isAffordable = accountBalance !== undefined ? (amount / accountBalance) <= 0.1 : true // 10% of balance threshold
+  const balancePercentage = accountBalance !== undefined ? (amount / accountBalance) * 100 : 0
   
   // Personalized responses based on specific merchants
   const merchantResponses: Record<string, { classification: TransactionAnalysis['classification'], reflection: string, reasoning: string, confidence: number }> = {
     'starbucks': {
-      classification: amount > 8 ? 'irresponsible' : 'responsible',
-      reflection: amount > 8 ? 'That\'s a lot for coffee! Maybe try making it at home?' : 'A little treat is totally fine!',
-      reasoning: amount > 8 ? 'Expensive coffee' : 'Reasonable treat',
+      classification: amount > 8 || !isAffordable ? 'irresponsible' : 'responsible',
+      reflection: amount > 8 ? 'That\'s a lot for coffee! Maybe try making it at home?' : 
+                  !isAffordable ? `This is ${balancePercentage.toFixed(1)}% of your balance - consider alternatives` :
+                  'A little treat is totally fine!',
+      reasoning: amount > 8 ? 'Expensive coffee' : !isAffordable ? 'High percentage of balance' : 'Reasonable treat',
       confidence: 0.8
     },
     'mcdonald\'s': {
@@ -153,9 +167,11 @@ const generateMockAnalysis = (merchant: string, amount: number, description: str
       confidence: 0.85
     },
     'amazon': {
-      classification: amount > 100 ? 'irresponsible' : amount > 50 ? 'neutral' : 'responsible',
-      reflection: amount > 100 ? 'Amazon Prime got you! Was this really necessary?' : amount > 50 ? 'Another Amazon purchase - are you getting good value?' : 'Smart online shopping!',
-      reasoning: amount > 100 ? 'Large online purchase' : amount > 50 ? 'Moderate online purchase' : 'Small online purchase',
+      classification: amount > 100 || !isAffordable ? 'irresponsible' : amount > 50 ? 'neutral' : 'responsible',
+      reflection: amount > 100 ? 'Amazon Prime got you! Was this really necessary?' : 
+                  !isAffordable ? `This is ${balancePercentage.toFixed(1)}% of your balance - was this planned?` :
+                  amount > 50 ? 'Another Amazon purchase - are you getting good value?' : 'Smart online shopping!',
+      reasoning: amount > 100 ? 'Large online purchase' : !isAffordable ? 'High percentage of balance' : amount > 50 ? 'Moderate online purchase' : 'Small online purchase',
       confidence: 0.8
     },
     'uber': {
@@ -229,11 +245,12 @@ const generateMockAnalysis = (merchant: string, amount: number, description: str
   let reasoning = 'General purchase'
   let confidence = 0.7
 
-  // Amount-based logic for unknown merchants
-  if (amount > 200) {
+  // Amount-based logic for unknown merchants (considering affordability)
+  if (amount > 200 || !isAffordable) {
     classification = 'irresponsible'
-    reflection = `$${amount.toFixed(2)} is a big purchase! Was this planned?`
-    reasoning = 'High amount'
+    reflection = amount > 200 ? `$${amount.toFixed(2)} is a big purchase! Was this planned?` :
+                 `This is ${balancePercentage.toFixed(1)}% of your balance - consider if this is necessary`
+    reasoning = amount > 200 ? 'High amount' : 'High percentage of balance'
     confidence = 0.9
   } else if (amount > 100) {
     classification = 'neutral'
@@ -296,12 +313,13 @@ const analyzeWithOpenAI = async (
   merchant: string, 
   amount: number, 
   description: string, 
-  config: LLMConfig
+  config: LLMConfig,
+  accountBalance?: number
 ): Promise<TransactionAnalysis> => {
   try {
     console.log('🚀 Calling OpenAI API directly...')
     
-    const prompt = createAnalysisPrompt(merchant, amount, description)
+    const prompt = createAnalysisPrompt(merchant, amount, description, accountBalance)
     
     // Add timeout to prevent hanging
     const controller = new AbortController()
@@ -347,15 +365,15 @@ const analyzeWithOpenAI = async (
     const analysisText = result.choices[0]?.message?.content || 'Unable to analyze transaction'
     
     // Parse the response to extract structured data
-    return parseAnalysisResponse(analysisText, merchant, amount, description)
-  } catch (error) {
+    return parseAnalysisResponse(analysisText, merchant, amount, description, accountBalance)
+  } catch (error: any) {
     if (error.name === 'AbortError') {
       console.error('❌ OpenAI API call timed out after 10 seconds')
       throw new Error('OpenAI API call timed out')
     }
     console.error('❌ API analysis failed:', error)
     // Fallback to mock analysis
-    return generateMockAnalysis(merchant, amount, description)
+    return generateMockAnalysis(merchant, amount, description, accountBalance)
   }
 }
 
@@ -364,7 +382,8 @@ const analyzeWithAnthropic = async (
   merchant: string, 
   amount: number, 
   description: string, 
-  config: LLMConfig
+  config: LLMConfig,
+  accountBalance?: number
 ): Promise<TransactionAnalysis> => {
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -409,7 +428,7 @@ const analyzeWithAnthropic = async (
   } catch (error) {
     console.error('Anthropic analysis failed:', error)
     // Fallback to mock analysis
-    return generateMockAnalysis(merchant, amount, description)
+    return generateMockAnalysis(merchant, amount, description, accountBalance)
   }
 }
 
@@ -418,7 +437,8 @@ export const analyzeTransaction = async (
   merchant: string,
   amount: number,
   description: string,
-  config: LLMConfig = defaultConfig
+  config: LLMConfig = defaultConfig,
+  accountBalance?: number
 ): Promise<TransactionAnalysis> => {
   console.log(`🤖 Analyzing transaction: ${merchant} - $${amount} (${description})`)
   console.log(`🔧 Using provider: ${config.provider}`)
@@ -428,23 +448,23 @@ export const analyzeTransaction = async (
     case 'openai':
       if (!config.apiKey) {
         console.warn('❌ OpenAI API key not provided, falling back to mock analysis')
-        return generateMockAnalysis(merchant, amount, description)
+        return generateMockAnalysis(merchant, amount, description, accountBalance)
       }
       console.log('🚀 Calling OpenAI API...')
-      return analyzeWithOpenAI(merchant, amount, description, config)
+      return analyzeWithOpenAI(merchant, amount, description, config, accountBalance)
     
     case 'anthropic':
       if (!config.apiKey) {
         console.warn('❌ Anthropic API key not provided, falling back to mock analysis')
-        return generateMockAnalysis(merchant, amount, description)
+        return generateMockAnalysis(merchant, amount, description, accountBalance)
       }
       console.log('🚀 Calling Anthropic API...')
-      return analyzeWithAnthropic(merchant, amount, description, config)
+      return analyzeWithAnthropic(merchant, amount, description, config, accountBalance)
     
     case 'mock':
     default:
       console.log('🎭 Using mock analysis')
-      return generateMockAnalysis(merchant, amount, description)
+      return generateMockAnalysis(merchant, amount, description, accountBalance)
   }
 }
 
@@ -549,7 +569,7 @@ const analyzeJustificationWithOpenAI = async (
     const analysisText = result.choices[0]?.message?.content || 'Unable to analyze justification'
     
     return parseJustificationResponse(analysisText, merchant, amount, justification)
-  } catch (error) {
+  } catch (error: any) {
     if (error.name === 'AbortError') {
       console.error('❌ OpenAI API call timed out after 10 seconds')
       throw new Error('OpenAI API call timed out')
