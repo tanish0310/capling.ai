@@ -79,7 +79,7 @@ export function TransactionItem({ transaction, onClick, onJustificationSubmitted
 
   return (
     <>
-      <Card className={`p-4 hover:shadow-md transition-all ${needsJustification ? 'border-orange-200 bg-orange-50' : ''}`}>
+      <Card className={`p-4 hover:shadow-md transition-all ${needsJustification ? 'border-yellow-500/30 bg-yellow-500/10' : ''}`}>
         <div className="flex items-start gap-4">
           <div className="rounded-full bg-muted p-3">
             <Icon className="h-5 w-5 text-muted-foreground" />

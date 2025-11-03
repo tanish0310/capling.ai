@@ -90,28 +90,28 @@ export function JustificationPrompt({ transaction, onJustificationSubmitted, onC
   const getClassificationIcon = () => {
     switch (transaction.classification) {
       case 'irresponsible':
-        return <XCircle className="h-5 w-5 text-red-500" />
+        return <XCircle className="h-5 w-5 text-destructive" />
       case 'neutral':
         return <AlertCircle className="h-5 w-5 text-yellow-500" />
       default:
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="h-5 w-5 text-primary" />
     }
   }
 
   const getClassificationColor = () => {
     switch (transaction.classification) {
       case 'irresponsible':
-        return 'border-red-200 bg-red-50'
+        return 'border-destructive/20 bg-destructive/10'
       case 'neutral':
-        return 'border-yellow-200 bg-yellow-50'
+        return 'border-yellow-500/20 bg-yellow-500/10'
       default:
-        return 'border-green-200 bg-green-50'
+        return 'border-primary/20 bg-primary/10'
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
-      <Card className="w-full max-w-md p-6">
+      <Card className="w-full max-w-md p-6 bg-card border-border shadow-lg">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             {getClassificationIcon()}
