@@ -139,7 +139,8 @@ export async function POST(request: NextRequest) {
         merchant,
         transactionAmount,
         description || merchant,
-        config
+        config,
+        account.balance
       )
       console.log('✅ LLM analysis completed:', analysis)
     } catch (llmError) {
