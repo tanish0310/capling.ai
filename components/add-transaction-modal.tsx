@@ -66,8 +66,8 @@ export function AddTransactionModal({ open, onOpenChange, onTransactionAdded, ac
 
       const result = await response.json()
       
-      // Call the callback with the processed transaction
-      await onTransactionAdded(result.transaction)
+      // Call the callback with the processed transaction and goal allocation flag
+      await onTransactionAdded(result.transaction, result.shouldShowGoalAllocation)
       handleClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add transaction')
