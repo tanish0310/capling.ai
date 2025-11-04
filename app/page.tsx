@@ -17,11 +17,13 @@ import { useBadges } from "@/hooks/use-badges"
 import { BadgeNotification } from "@/components/badge-notification"
 import { AddTransactionModal } from "@/components/add-transaction-modal"
 import { GoalModal } from "@/components/goal-modal"
+import { GoalAllocationModal } from "@/components/goal-allocation-modal"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { UserMenu } from "@/components/auth/user-menu"
 import { AuthForm } from "@/components/auth/auth-form"
 import { SimpleDemo } from "@/components/simple-demo"
 import { useAuth } from "@/contexts/auth-context"
+import { useGoalAllocation } from "@/contexts/goal-allocation-context"
 import { OnboardingForm } from "@/components/onboarding-form"
 import Link from "next/link"
 
@@ -71,6 +73,7 @@ function CaplingAppContent() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false)
   const [addGoalOpen, setAddGoalOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const { pendingTransaction, showGoalAllocation, triggerGoalAllocation, completeGoalAllocation } = useGoalAllocation()
   // Use Supabase data system
   const {
     loading,
@@ -93,6 +96,21 @@ function CaplingAppContent() {
       setCaplingName(userProfile.capling_name as string)
     }
   }, [userProfile])
+
+  // Check for pending goal allocation from test API
+  useEffect(() => {
+    const pendingData = sessionStorage.getItem('pendingGoalAllocation')
+    if (pendingData) {
+      try {
+        const transactionData = JSON.parse(pendingData)
+        triggerGoalAllocation(transactionData)
+        sessionStorage.removeItem('pendingGoalAllocation')
+      } catch (error) {
+        console.error('Error parsing pending goal allocation data:', error)
+        sessionStorage.removeItem('pendingGoalAllocation')
+      }
+    }
+  }, [triggerGoalAllocation])
 
   // Use goals system
   const {
@@ -256,10 +274,19 @@ function CaplingAppContent() {
     refreshData()
   }
 
-  const handleAddTransaction = async (transactionData: any) => {
+  const handleAddTransaction = async (transactionData: any, shouldShowGoalAllocation?: boolean) => {
     try {
       await createTransaction(transactionData)
       // The hook will automatically update the data
+      
+      // Show goal allocation modal only for irresponsible spending
+      if (shouldShowGoalAllocation && transactionData.amount > 0) {
+        triggerGoalAllocation({
+          amount: transactionData.amount,
+          merchant: transactionData.merchant,
+          category: transactionData.category
+        })
+      }
     } catch (error) {
       console.error('Failed to add transaction:', error)
       throw error // Re-throw so the modal can handle it
@@ -273,6 +300,12 @@ function CaplingAppContent() {
       console.error('Failed to add goal:', error)
       throw error
     }
+  }
+
+  const handleGoalAllocationComplete = () => {
+    completeGoalAllocation()
+    // Refresh data to show updated goal progress
+    refreshData()
   }
 
   const handleEditGoal = (goal: Goal) => {
@@ -669,6 +702,14 @@ function CaplingAppContent() {
         onGoalAdded={handleAddGoal}
         editingGoal={editingGoal}
         onGoalUpdated={handleUpdateGoal}
+      />
+      <GoalAllocationModal
+        open={showGoalAllocation}
+        onOpenChange={(open) => !open && completeGoalAllocation()}
+        transactionAmount={pendingTransaction?.amount || 0}
+        transactionMerchant={pendingTransaction?.merchant || ''}
+        transactionCategory={pendingTransaction?.category}
+        onAllocationComplete={handleGoalAllocationComplete}
       />
 
       {/* Badge Notification */}

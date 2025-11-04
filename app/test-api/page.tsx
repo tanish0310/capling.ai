@@ -13,10 +13,12 @@ import { UserInfo } from '@/components/user-info'
 import { useAuth } from '@/contexts/auth-context'
 import { useSupabaseData } from '@/hooks/use-supabase-data'
 import { ProtectedRoute } from '@/components/auth/protected-route'
+import { useRouter } from 'next/navigation'
 
 function TestAPIContent() {
   const { user } = useAuth()
   const { currentAccount, loading: dataLoading } = useSupabaseData()
+  const router = useRouter()
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [transactionForm, setTransactionForm] = useState({
@@ -191,6 +193,18 @@ function TestAPIContent() {
           category: 'shopping',
           description: ''
         })
+        
+        // Redirect to main page for goal allocation if needed
+        if (result.shouldShowGoalAllocation) {
+          // Store transaction data in sessionStorage for the main page to pick up
+          sessionStorage.setItem('pendingGoalAllocation', JSON.stringify({
+            amount: amount,
+            merchant: transactionForm.merchant,
+            category: transactionForm.category
+          }))
+          // Redirect to main page
+          router.push('/')
+        }
       }
     } catch (error) {
       addResult('Custom Transaction', false, null, error instanceof Error ? error.message : 'Unknown error')
@@ -530,6 +544,7 @@ function TestAPIContent() {
           </div>
         </Card>
       </div>
+
     </div>
   )
 }
