@@ -161,6 +161,7 @@ export function useGoals() {
       const newAmount = Math.min(goal.current_amount + amount, goal.target_amount)
       const isCompleted = newAmount >= goal.target_amount
 
+      // Update the goal
       const { data, error } = await supabase
         .from('goals')
         .update({
@@ -173,6 +174,35 @@ export function useGoals() {
         .single()
 
       if (error) throw error
+
+      // Also deduct the allocated amount from the user's checking account balance
+      // This simulates moving money from checking to savings
+      const { data: accounts, error: accountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('account_type', 'checking')
+        .single()
+
+      if (accountsError) {
+        console.error('Error fetching account for balance update:', accountsError)
+        // Goal was updated successfully, but account balance update failed
+        // We'll still return the goal data but log the error
+      } else if (accounts) {
+        const newBalance = accounts.balance - amount
+        
+        const { error: balanceError } = await supabase
+          .from('accounts')
+          .update({ balance: newBalance })
+          .eq('id', accounts.id)
+
+        if (balanceError) {
+          console.error('Error updating account balance:', balanceError)
+          // Goal was updated successfully, but account balance update failed
+        } else {
+          console.log(`✅ Allocated $${amount.toFixed(2)} to goal "${goal.title}" and deducted from checking account`)
+        }
+      }
 
       setGoals(prev => prev.map(g => 
         g.id === goalId ? data : g
