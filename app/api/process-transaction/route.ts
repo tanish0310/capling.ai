@@ -231,7 +231,8 @@ export async function POST(request: NextRequest) {
       analysis: {
         classification: analysis.classification,
         reflection: analysis.reflection
-      }
+      },
+      shouldShowGoalAllocation: transactionAmount > 0 && analysis.classification === 'irresponsible' // Only show goal allocation for irresponsible spending
     })
 
   } catch (error) {
