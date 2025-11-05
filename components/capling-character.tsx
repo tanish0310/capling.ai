@@ -2,6 +2,9 @@
 
 import { cn } from "@/lib/utils"
 import { CaplingNameEditor } from "./capling-name-editor"
+import { useCaplingLevels } from "@/hooks/use-capling-levels"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 
 type CaplingMood = "happy" | "neutral" | "worried" | "sad" | "depressed"
 
@@ -132,6 +135,8 @@ function DinosaurSVG({ mood }: { mood: CaplingMood }) {
 }
 
 export function CaplingCharacter({ mood, className, name = "Capling", showNameEditor = false, onNameUpdate, userId }: CaplingCharacterProps) {
+  const { levelInfo, getLevelTitle, getLevelColor } = useCaplingLevels()
+  
   const getMoodColor = () => {
     switch (mood) {
       case "happy":
@@ -216,6 +221,41 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
           <DinosaurSVG mood={mood} />
         </div>
       </div>
+
+      {/* Level and XP Information */}
+      {levelInfo && (
+        <div className="w-full max-w-sm space-y-3">
+          {/* Level Badge */}
+          <div className="flex items-center justify-center gap-2">
+            <Badge 
+              className={`bg-gradient-to-r ${getLevelColor(levelInfo.level)} text-white border-0 px-3 py-1 text-sm font-semibold`}
+            >
+              Level {levelInfo.level}
+            </Badge>
+            <span className="text-sm text-muted-foreground font-medium">
+              {getLevelTitle(levelInfo.level)}
+            </span>
+          </div>
+
+          {/* XP Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{levelInfo.xp} XP</span>
+              <span>{levelInfo.xpForNextLevel} XP to next level</span>
+            </div>
+            <Progress 
+              value={levelInfo.progressPercentage} 
+              className="h-2"
+            />
+          </div>
+
+          {/* Stats */}
+          <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+            <span>📚 {levelInfo.lessonsRead} lessons</span>
+            <span>😊 {levelInfo.consecutiveHappyDays} happy days</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
