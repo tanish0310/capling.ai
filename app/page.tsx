@@ -9,7 +9,7 @@ import { TransactionItem, type Transaction } from "@/components/transaction-item
 import { JustificationModal } from "@/components/justification-modal"
 import { GoalCard } from "@/components/goal-card"
 import { BadgeCard } from "@/components/badge-card"
-import { Wallet, Target, TrendingUp, Plus, Home, Receipt, Trophy, Menu, AlertCircle, RefreshCw } from "lucide-react"
+import { Wallet, Target, TrendingUp, Plus, Home, Receipt, Trophy, Menu, AlertCircle, RefreshCw, BookOpen } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 import { useGoals, type Goal } from "@/hooks/use-goals"
@@ -25,6 +25,7 @@ import { SimpleDemo } from "@/components/simple-demo"
 import { useAuth } from "@/contexts/auth-context"
 import { useGoalAllocation } from "@/contexts/goal-allocation-context"
 import { OnboardingForm } from "@/components/onboarding-form"
+import { LearnTab } from "@/components/learn-tab"
 import Link from "next/link"
 
 export default function CaplingApp() {
@@ -428,7 +429,7 @@ function CaplingAppContent() {
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         <Tabs defaultValue="home" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="home" className="gap-2">
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">Home</span>
@@ -440,6 +441,10 @@ function CaplingAppContent() {
             <TabsTrigger value="goals" className="gap-2">
               <Trophy className="h-4 w-4" />
               <span className="hidden sm:inline">Goals</span>
+            </TabsTrigger>
+            <TabsTrigger value="learn" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Learn</span>
             </TabsTrigger>
           </TabsList>
 
@@ -680,6 +685,11 @@ function CaplingAppContent() {
               </div>
             </div>
 
+          </TabsContent>
+
+          {/* Learn Tab */}
+          <TabsContent value="learn" className="space-y-6">
+            <LearnTab />
           </TabsContent>
 
         </Tabs>
