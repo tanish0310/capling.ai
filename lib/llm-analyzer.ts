@@ -6,6 +6,7 @@ export interface TransactionAnalysis {
   reflection: string
   confidence: number
   reasoning: string
+  improvement_suggestion?: string | null
 }
 
 export interface JustificationAnalysis {
@@ -30,27 +31,69 @@ const defaultConfig: LLMConfig = {
 // Transaction analysis prompt
 // Parse OpenAI response into structured analysis
 const parseAnalysisResponse = (analysisText: string, merchant: string, amount: number, description: string, accountBalance?: number): TransactionAnalysis => {
+  console.log('🔍 Parsing analysis response:', analysisText)
   try {
     // Try to parse as JSON first
     try {
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
+      // First try to parse the entire response as JSON
+      const parsed = JSON.parse(analysisText)
+      if (parsed && typeof parsed === 'object') {
         return {
           classification: parsed.classification || 'neutral',
           reflection: parsed.reflection || analysisText,
           confidence: parsed.confidence || 0.8,
-          reasoning: parsed.reasoning || 'AI analysis'
+          reasoning: parsed.reasoning || 'AI analysis',
+          improvement_suggestion: parsed.improvement_suggestion || null
         }
       }
     } catch (jsonError) {
-      // If JSON parsing fails, continue with text parsing
+      // If that fails, try to extract JSON from the text
+      try {
+        // Look for JSON pattern in the text
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          console.log('🔍 Found JSON match:', jsonMatch[0])
+          const parsed = JSON.parse(jsonMatch[0])
+          console.log('🔍 Parsed JSON:', parsed)
+          return {
+            classification: parsed.classification || 'neutral',
+            reflection: parsed.reflection || analysisText,
+            confidence: parsed.confidence || 0.8,
+            reasoning: parsed.reasoning || 'AI analysis',
+            improvement_suggestion: parsed.improvement_suggestion || null
+          }
+        }
+      } catch (jsonError2) {
+        // If JSON parsing fails, continue with text parsing
+        console.log('JSON parsing failed, falling back to text parsing')
+      }
     }
     
     // Fallback to text parsing
     let classification = 'neutral'
     let reflection = analysisText
     let reasoning = 'AI analysis'
+    let improvement_suggestion: string | null = null
+    
+    // Special case: if the reflection contains JSON, try to parse it
+    if (analysisText.includes('"classification"') && analysisText.includes('"reflection"')) {
+      try {
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0])
+          console.log('🔍 Found JSON in reflection field:', parsed)
+          return {
+            classification: parsed.classification || 'neutral',
+            reflection: parsed.reflection || analysisText,
+            confidence: parsed.confidence || 0.8,
+            reasoning: parsed.reasoning || 'AI analysis',
+            improvement_suggestion: parsed.improvement_suggestion || null
+          }
+        }
+      } catch (error) {
+        console.log('Failed to parse JSON from reflection field')
+      }
+    }
     
     // Look for classification indicators
     if (analysisText.toLowerCase().includes('responsible') || analysisText.toLowerCase().includes('good') || analysisText.toLowerCase().includes('wise')) {
@@ -75,7 +118,8 @@ const parseAnalysisResponse = (analysisText: string, merchant: string, amount: n
       classification: classification as 'responsible' | 'irresponsible' | 'neutral',
       reflection: reflection,
       confidence: 0.8,
-      reasoning: reasoning
+      reasoning: reasoning,
+      improvement_suggestion: null
     }
   } catch (error) {
     console.error('Error parsing analysis response:', error)
@@ -93,218 +137,77 @@ const createAnalysisPrompt = (merchant: string, amount: number, description: str
     ? `\n\nConsider affordability: A $${amount.toFixed(2)} purchase represents ${((amount / accountBalance) * 100).toFixed(1)}% of the user's current balance.`
     : ''
 
-  return `You are Capling, a friendly financial advisor dinosaur. Analyze this transaction and provide personalized, encouraging feedback.
+  return `You are Capling, a strict but friendly financial advisor dinosaur. Analyze this transaction with realistic financial standards.
 
 Transaction Details:
 - Merchant: ${merchant}
 - Amount: $${amount.toFixed(2)}
 - Description: ${description}${balanceContext}${affordabilityGuidance}
 
-Classify this transaction as one of:
-- "responsible": Essential purchases, planned expenses, good value, or affordable relative to balance
-- "irresponsible": Unplanned, expensive, potentially wasteful, or unaffordable relative to balance
-- "neutral": Neither particularly good nor bad
+STRICT CLASSIFICATION RULES:
+- "responsible": ONLY essential purchases (groceries, gas, bills, medicine) OR very affordable treats (<$10) OR planned purchases that are <5% of balance
+- "irresponsible": Luxury items (designer brands, expensive electronics, jewelry), unplanned large purchases (>$50), or anything >10% of balance
+- "neutral": Moderate purchases ($10-50) that aren't essential but aren't clearly wasteful
 
-Provide your analysis in this exact JSON format:
+REALISTIC EXAMPLES:
+- Starbucks $4.50 with $1000 balance → "responsible" (small treat)
+- Prada $500 with $15000 balance → "irresponsible" (luxury brand, 3.3% of balance)
+- Target $150 with $500 balance → "irresponsible" (30% of balance!)
+- Groceries $80 with $2000 balance → "responsible" (essential)
+- iPhone $1000 with $5000 balance → "irresponsible" (20% of balance, luxury item)
+- Gas $45 with $1000 balance → "responsible" (essential)
+
+You must respond with ONLY a valid JSON object. No other text, no explanations, no markdown.
+
+Example response:
+{"classification": "irresponsible", "reflection": "This is a luxury purchase that may not be necessary.", "confidence": 0.85, "reasoning": "Luxury item, high cost", "improvement_suggestion": "Consider cheaper alternatives or save for this purchase."}
+
+Your response must be in this exact format:
 {
   "classification": "responsible|irresponsible|neutral",
-  "reflection": "A personalized, encouraging message specific to this purchase (max 120 characters, NO EMOJIS)",
+  "reflection": "A realistic, honest message about this purchase (max 120 characters, NO EMOJIS)",
   "confidence": 0.85,
-  "reasoning": "Brief explanation of your decision (max 60 characters)"
+  "reasoning": "Brief explanation of your decision (max 60 characters)",
+  "improvement_suggestion": "If irresponsible, suggest one specific actionable improvement (max 100 characters, NO EMOJIS). If responsible/neutral, use null."
 }
 
-Be specific about the merchant and amount. Consider affordability:
-- Starbucks $4.50 with $1000 balance → "Your morning coffee ritual is worth it!"
-- Target $150 with $500 balance → "This is 30% of your balance - consider alternatives"
-- Porsche $100000 with $50000 balance → "This exceeds your balance - not recommended"
+BE REALISTIC: Most purchases over $50 are NOT responsible unless they're essential. Luxury brands, designer items, and expensive electronics should almost always be "irresponsible" unless the user is very wealthy.
 
-IMPORTANT: Do not use any emojis in the reflection field. Keep it text-only.
-
-Make it personal and relevant to the specific purchase. Be encouraging but honest about affordability.`
+CRITICAL: Your response must be ONLY the JSON object. No other text whatsoever.`
 }
 
 // Mock LLM response for development/fallback
 const generateMockAnalysis = (merchant: string, amount: number, description: string, accountBalance?: number): TransactionAnalysis => {
-  const desc = (description || '').toLowerCase()
-  const merchantLower = (merchant || '').toLowerCase()
-  
-  // Check affordability if account balance is provided
-  const isAffordable = accountBalance !== undefined ? (amount / accountBalance) <= 0.1 : true // 10% of balance threshold
-  const balancePercentage = accountBalance !== undefined ? (amount / accountBalance) * 100 : 0
-  
-  // Personalized responses based on specific merchants
-  const merchantResponses: Record<string, { classification: TransactionAnalysis['classification'], reflection: string, reasoning: string, confidence: number }> = {
-    'starbucks': {
-      classification: amount > 8 || !isAffordable ? 'irresponsible' : 'responsible',
-      reflection: amount > 8 ? 'That\'s a lot for coffee! Maybe try making it at home?' : 
-                  !isAffordable ? `This is ${balancePercentage.toFixed(1)}% of your balance - consider alternatives` :
-                  'A little treat is totally fine!',
-      reasoning: amount > 8 ? 'Expensive coffee' : !isAffordable ? 'High percentage of balance' : 'Reasonable treat',
-      confidence: 0.8
-    },
-    'mcdonald\'s': {
-      classification: 'neutral',
-      reflection: 'Fast food again? Your wallet and health might appreciate a home-cooked meal!',
-      reasoning: 'Fast food expense',
-      confidence: 0.7
-    },
-    'target': {
-      classification: amount > 50 ? 'neutral' : 'responsible',
-      reflection: amount > 50 ? 'Target got you again! Did you stick to your list?' : 'Smart shopping at Target!',
-      reasoning: amount > 50 ? 'Large retail purchase' : 'Planned shopping',
-      confidence: 0.8
-    },
-    'shell gas': {
-      classification: 'responsible',
-      reflection: 'Gas is expensive these days, but you need it to get around!',
-      reasoning: 'Essential transportation',
-      confidence: 0.9
-    },
-    'netflix': {
-      classification: 'responsible',
-      reflection: 'Entertainment budget well spent! Much cheaper than going out',
-      reasoning: 'Affordable entertainment',
-      confidence: 0.85
-    },
-    'amazon': {
-      classification: amount > 100 || !isAffordable ? 'irresponsible' : amount > 50 ? 'neutral' : 'responsible',
-      reflection: amount > 100 ? 'Amazon Prime got you! Was this really necessary?' : 
-                  !isAffordable ? `This is ${balancePercentage.toFixed(1)}% of your balance - was this planned?` :
-                  amount > 50 ? 'Another Amazon purchase - are you getting good value?' : 'Smart online shopping!',
-      reasoning: amount > 100 ? 'Large online purchase' : !isAffordable ? 'High percentage of balance' : amount > 50 ? 'Moderate online purchase' : 'Small online purchase',
-      confidence: 0.8
-    },
-    'uber': {
-      classification: 'neutral',
-      reflection: 'Uber is convenient, but those rides add up fast! Consider walking or public transport',
-      reasoning: 'Transportation convenience',
-      confidence: 0.7
-    },
-    'whole foods': {
-      classification: 'neutral',
-      reflection: 'Whole Foods is great for quality, but ouch on the wallet! Maybe try Trader Joe\'s?',
-      reasoning: 'Premium grocery shopping',
-      confidence: 0.8
-    },
-    'spotify': {
-      classification: 'responsible',
-      reflection: 'Music makes everything better! Great value for unlimited tunes',
-      reasoning: 'Affordable entertainment',
-      confidence: 0.9
-    },
-    'cvs pharmacy': {
-      classification: 'responsible',
-      reflection: 'Health comes first! Taking care of yourself is always a good investment',
-      reasoning: 'Essential health expense',
-      confidence: 0.95
-    },
-    'chipotle': {
-      classification: 'neutral',
-      reflection: 'Chipotle is delicious, but $11+ for a burrito? Maybe meal prep instead?',
-      reasoning: 'Expensive fast casual',
-      confidence: 0.7
-    },
-    'apple store': {
-      classification: amount > 50 ? 'irresponsible' : 'neutral',
-      reflection: amount > 50 ? 'Apple tax strikes again! Do you really need the latest accessory?' : 'Apple accessories can be pricey, but quality matters!',
-      reasoning: amount > 50 ? 'Expensive tech purchase' : 'Tech accessory',
-      confidence: 0.8
-    },
-    'walmart': {
-      classification: amount > 100 ? 'neutral' : 'responsible',
-      reflection: amount > 100 ? 'Big Walmart haul! Hope you got everything you needed' : 'Smart bulk shopping at Walmart!',
-      reasoning: amount > 100 ? 'Large grocery run' : 'Efficient shopping',
-      confidence: 0.8
-    },
-    'lyft': {
-      classification: 'neutral',
-      reflection: 'Another ride-share! These small trips can really add up over time',
-      reasoning: 'Transportation convenience',
-      confidence: 0.7
-    },
-    'pizza hut': {
-      classification: 'neutral',
-      reflection: 'Pizza delivery is tempting, but homemade pizza is cheaper and healthier!',
-      reasoning: 'Food delivery expense',
-      confidence: 0.7
-    }
-  }
-
-  // Check for exact merchant match first
-  const merchantKey = Object.keys(merchantResponses).find(key => 
-    merchantLower.includes(key.toLowerCase()) || key.toLowerCase().includes(merchantLower)
-  )
-
-  if (merchantKey) {
-    return merchantResponses[merchantKey]
-  }
-
-  // Fallback to category-based analysis for unknown merchants
-  let classification: TransactionAnalysis['classification'] = 'responsible'
-  let reflection = 'Thanks for the purchase! Keep tracking your spending!'
+  // Simple fallback for when LLM is not available
+  // This should rarely be used since we have LLM analysis
+  let classification: TransactionAnalysis['classification'] = 'neutral'
+  let reflection = 'Transaction recorded. Keep tracking your spending!'
   let reasoning = 'General purchase'
-  let confidence = 0.7
+  let confidence = 0.5
+  let improvement_suggestion: string | null = 'Consider if this purchase aligns with your financial goals'
 
-  // Amount-based logic for unknown merchants (considering affordability)
-  if (amount > 200 || !isAffordable) {
+  // Basic amount-based fallback
+  if (amount > 200) {
     classification = 'irresponsible'
-    reflection = amount > 200 ? `$${amount.toFixed(2)} is a big purchase! Was this planned?` :
-                 `This is ${balancePercentage.toFixed(1)}% of your balance - consider if this is necessary`
-    reasoning = amount > 200 ? 'High amount' : 'High percentage of balance'
-    confidence = 0.9
-  } else if (amount > 100) {
-    classification = 'neutral'
-    reflection = `$${amount.toFixed(2)} is a significant amount. Hope it was worth it!`
-    reasoning = 'Moderate amount'
+    reflection = `$${amount.toFixed(2)} is a large purchase. Was this planned?`
+    reasoning = 'High amount'
     confidence = 0.7
-  } else if (amount < 5) {
+    improvement_suggestion = 'Wait 24 hours before making large purchases to avoid impulse buying'
+  } else if (amount < 10) {
     classification = 'responsible'
-    reflection = `Just $${amount.toFixed(2)} - that's a small, manageable expense!`
+    reflection = `$${amount.toFixed(2)} is a small, manageable expense!`
     reasoning = 'Small amount'
-    confidence = 0.8
-  }
-
-  // Category-based overrides for unknown merchants
-  if (desc.includes('coffee') || desc.includes('latte') || desc.includes('cappuccino')) {
-    classification = amount > 6 ? 'neutral' : 'responsible'
-    reflection = amount > 6 ? 'That\'s pricey for coffee! Consider brewing at home' : 'A little coffee treat is totally fine!'
-    reasoning = 'Coffee purchase'
-    confidence = 0.8
-  }
-
-  if (desc.includes('grocery') || desc.includes('food') || desc.includes('grocery')) {
-    classification = 'responsible'
-    reflection = 'Groceries are essential! Good job planning your meals'
-    reasoning = 'Essential food'
-    confidence = 0.9
-  }
-
-  if (desc.includes('gas') || desc.includes('fuel') || desc.includes('petrol')) {
-    classification = 'responsible'
-    reflection = 'Gas prices are crazy, but you need it to get around!'
-    reasoning = 'Essential transportation'
-    confidence = 0.9
-  }
-
-  if (desc.includes('subscription') || desc.includes('monthly')) {
-    classification = 'responsible'
-    reflection = 'Recurring subscriptions are great for budgeting! Just make sure you use it'
-    reasoning = 'Subscription service'
-    confidence = 0.8
-  }
-
-  if (desc.includes('delivery') || desc.includes('takeout')) {
-    classification = 'neutral'
-    reflection = 'Food delivery is convenient but expensive! Consider cooking at home'
-    reasoning = 'Food delivery'
     confidence = 0.7
+    improvement_suggestion = null
   }
+
 
   return {
     classification,
     reflection,
     confidence,
-    reasoning
+    reasoning,
+    improvement_suggestion
   }
 }
 
@@ -336,15 +239,15 @@ const analyzeWithOpenAI = async (
         messages: [
           {
             role: 'system',
-            content: 'You are a financial advisor helping users understand their spending habits. Provide personalized, encouraging feedback.'
+            content: 'You are a strict financial advisor helping users understand their spending habits. Be realistic and honest about what constitutes responsible spending. Most luxury purchases and large unplanned expenses should be classified as irresponsible. You must respond with ONLY a valid JSON object. No other text, explanations, or formatting.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 300
+        temperature: 0.1,
+        max_tokens: 200
       }),
       signal: controller.signal
     })
@@ -363,6 +266,7 @@ const analyzeWithOpenAI = async (
     console.log('✅ Received OpenAI analysis:', result)
     
     const analysisText = result.choices[0]?.message?.content || 'Unable to analyze transaction'
+    console.log('🔍 Raw LLM response:', analysisText)
     
     // Parse the response to extract structured data
     return parseAnalysisResponse(analysisText, merchant, amount, description, accountBalance)
@@ -551,8 +455,8 @@ const analyzeJustificationWithOpenAI = async (
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 300
+        temperature: 0.1,
+        max_tokens: 200
       }),
       signal: controller.signal
     })
