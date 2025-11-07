@@ -180,6 +180,7 @@ export async function POST(request: NextRequest) {
       original_classification: analysis.classification,
       final_classification: analysis.classification,
       reflection: analysis.reflection,
+      improvement_suggestion: analysis.improvement_suggestion,
       description: description || merchant,
       date: formattedDate,
       timestamp: transactionDate.getTime(),
