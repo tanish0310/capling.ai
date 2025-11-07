@@ -10,8 +10,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Capling - Your Financial Companion',
+  description: 'Track your spending, set goals, and learn financial literacy with Capling',
   generator: 'v0.app',
 }
 

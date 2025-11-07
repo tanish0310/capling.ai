@@ -113,6 +113,11 @@ function CaplingAppContent() {
     }
   }, [triggerGoalAllocation])
 
+  // Set page title
+  useEffect(() => {
+    document.title = 'Capling - Your Financial Companion'
+  }, [])
+
   // Use goals system
   const {
     goals,
@@ -277,8 +282,8 @@ function CaplingAppContent() {
 
   const handleAddTransaction = async (transactionData: any, shouldShowGoalAllocation?: boolean) => {
     try {
-      await createTransaction(transactionData)
-      // The hook will automatically update the data
+      // Transaction is already created by the API, just refresh the data
+      refreshData()
       
       // Show goal allocation modal only for irresponsible spending
       if (shouldShowGoalAllocation && transactionData.amount > 0) {

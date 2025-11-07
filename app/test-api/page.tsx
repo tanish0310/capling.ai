@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -18,6 +18,11 @@ import { useRouter } from 'next/navigation'
 function TestAPIContent() {
   const { user } = useAuth()
   const { currentAccount, loading: dataLoading } = useSupabaseData()
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Capling - Test API'
+  }, [])
   const router = useRouter()
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
