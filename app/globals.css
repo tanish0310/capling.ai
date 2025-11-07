@@ -124,3 +124,54 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations for Capling aura effects */
+@keyframes aura-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes aura-glow {
+  0%, 100% {
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    filter: brightness(1.2) saturate(1.3);
+  }
+}
+
+@keyframes legendary-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-aura-pulse {
+  animation: aura-pulse 3s ease-in-out infinite;
+}
+
+.animate-aura-glow {
+  animation: aura-glow 4s ease-in-out infinite;
+}
+
+.animate-legendary-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(168,85,247,0.6) 0%,
+    rgba(236,72,153,0.8) 25%,
+    rgba(168,85,247,0.6) 50%,
+    rgba(236,72,153,0.8) 75%,
+    rgba(168,85,247,0.6) 100%
+  );
+  background-size: 200% 100%;
+  animation: legendary-shimmer 3s linear infinite;
+}
