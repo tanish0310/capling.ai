@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BookOpen, Sparkles, History, Loader2, AlertCircle, GraduationCap, Lightbulb } from 'lucide-react'
+import { BookOpen, History, Loader2, AlertCircle, GraduationCap, Lightbulb } from 'lucide-react'
 import { useLessons, Lesson } from '@/hooks/use-lessons'
 import { LessonCard } from './lesson-card'
-import { useToast } from '@/components/ui/use-toast'
 
 export function LearnTab() {
   const { 
@@ -16,13 +14,11 @@ export function LearnTab() {
     loading, 
     error, 
     generating, 
-    generateDailyLesson, 
     hasTodaysLesson, 
     getTodaysLesson 
   } = useLessons()
   
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null)
-  const { toast } = useToast()
 
   // Auto-expand today's lesson if it exists
   useEffect(() => {
@@ -32,21 +28,6 @@ export function LearnTab() {
     }
   }, [lessons, getTodaysLesson])
 
-  const handleGenerateLesson = async () => {
-    try {
-      const newLesson = await generateDailyLesson()
-      toast({
-        title: "New Lesson Generated! 📚",
-        description: `"${newLesson.title}" is ready to read.`,
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate lesson. Please try again.",
-        variant: "destructive"
-      })
-    }
-  }
 
   const handleLessonToggle = (lessonId: string) => {
     setExpandedLessonId(expandedLessonId === lessonId ? null : lessonId)
@@ -92,33 +73,20 @@ export function LearnTab() {
           </p>
         </div>
         
-        {!hasToday && (
-          <Button 
-            onClick={handleGenerateLesson}
-            disabled={generating}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-          >
-            {generating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Get Today's Lesson
-              </>
-            )}
-          </Button>
+        {generating && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Generating today's lesson...
+          </div>
         )}
       </div>
 
       {/* Today's Lesson Highlight */}
-      {todaysLesson && (
+      {todaysLesson ? (
         <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <BookOpen className="h-5 w-5 text-primary" />
               <CardTitle className="text-primary">Today's Lesson</CardTitle>
               <Badge className="bg-primary text-primary-foreground">New</Badge>
             </div>
@@ -131,7 +99,25 @@ export function LearnTab() {
             />
           </CardContent>
         </Card>
-      )}
+      ) : generating ? (
+        <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <CardTitle className="text-primary">Today's Lesson</CardTitle>
+              <Badge className="bg-primary text-primary-foreground">Generating</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center p-8">
+              <div className="flex items-center gap-3 text-primary">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-lg">Creating your personalized lesson...</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Lessons Tabs */}
       {lessons.length > 0 ? (
@@ -227,27 +213,16 @@ export function LearnTab() {
         <Card>
           <CardContent className="p-12 text-center">
             <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Start Your Learning Journey</h3>
+            <h3 className="text-xl font-semibold mb-2">Preparing Your First Lesson</h3>
             <p className="text-muted-foreground mb-6">
-              Get personalized financial literacy lessons every day to help you make smarter money decisions.
+              We're generating your personalized financial literacy lesson. This will appear automatically each day to help you make smarter money decisions.
             </p>
-            <Button 
-              onClick={handleGenerateLesson}
-              disabled={generating}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Your First Lesson
-                </>
-              )}
-            </Button>
+            {generating && (
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Creating your lesson...</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
