@@ -92,15 +92,17 @@ CREATE TRIGGER update_capling_levels_updated_at
 CREATE OR REPLACE FUNCTION calculate_level_from_xp(total_xp INTEGER)
 RETURNS INTEGER AS $$
 BEGIN
-  -- Level formula: level = floor(sqrt(total_xp / 100)) + 1
+  -- Level formula: level = floor(total_xp / 50) + 1
   -- This means:
-  -- Level 1: 0-99 XP
-  -- Level 2: 100-399 XP  
-  -- Level 3: 400-899 XP
-  -- Level 4: 900-1599 XP
-  -- Level 5: 1600-2499 XP
+  -- Level 1: 0-49 XP
+  -- Level 2: 50-99 XP  
+  -- Level 3: 100-149 XP
+  -- Level 4: 150-199 XP
+  -- Level 5: 200-249 XP
+  -- Level 10: 450-499 XP
+  -- Level 20: 950-999 XP
   -- etc.
-  RETURN FLOOR(SQRT(total_xp / 100.0)) + 1;
+  RETURN FLOOR(total_xp / 50.0) + 1;
 END;
 $$ language 'plpgsql';
 
@@ -108,8 +110,8 @@ $$ language 'plpgsql';
 CREATE OR REPLACE FUNCTION xp_needed_for_level(level INTEGER)
 RETURNS INTEGER AS $$
 BEGIN
-  -- XP needed = (level - 1)^2 * 100
-  RETURN (level - 1) * (level - 1) * 100;
+  -- XP needed = (level - 1) * 50
+  RETURN (level - 1) * 50;
 END;
 $$ language 'plpgsql';
 
