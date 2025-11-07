@@ -117,10 +117,34 @@ export function useLessons() {
     }) || null
   }, [lessons])
 
+  // Auto-generate today's lesson if it doesn't exist
+  const autoGenerateTodaysLesson = useCallback(async () => {
+    if (!user || loading || generating) return
+
+    try {
+      // Check if we already have today's lesson
+      const hasToday = hasTodaysLesson()
+      if (hasToday) return
+
+      // Auto-generate today's lesson
+      await generateDailyLesson()
+    } catch (err) {
+      console.error('Error auto-generating lesson:', err)
+      // Don't set error state for auto-generation failures
+    }
+  }, [user, loading, generating, hasTodaysLesson, generateDailyLesson])
+
   // Load lessons when user changes
   useEffect(() => {
     fetchLessons()
   }, [fetchLessons])
+
+  // Auto-generate today's lesson after lessons are loaded
+  useEffect(() => {
+    if (!loading && lessons.length >= 0) {
+      autoGenerateTodaysLesson()
+    }
+  }, [loading, lessons.length, autoGenerateTodaysLesson])
 
   return {
     lessons,
@@ -130,6 +154,7 @@ export function useLessons() {
     fetchLessons,
     generateDailyLesson,
     hasTodaysLesson,
-    getTodaysLesson
+    getTodaysLesson,
+    autoGenerateTodaysLesson
   }
 }

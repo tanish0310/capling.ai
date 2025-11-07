@@ -59,7 +59,7 @@ export interface Database {
           merchant: string
           amount: number
           category: 'shopping' | 'food' | 'transport' | 'bills' | 'dining' | 'entertainment' | 'health' | 'income'
-          classification: 'responsible' | 'borderline' | 'impulsive'
+          classification: 'responsible' | 'irresponsible' | 'neutral'
           reflection: string | null
           description: string | null
           date: string
@@ -75,7 +75,7 @@ export interface Database {
           merchant: string
           amount: number
           category: 'shopping' | 'food' | 'transport' | 'bills' | 'dining' | 'entertainment' | 'health' | 'income'
-          classification: 'responsible' | 'borderline' | 'impulsive'
+          classification: 'responsible' | 'irresponsible' | 'neutral'
           reflection?: string | null
           description?: string | null
           date: string

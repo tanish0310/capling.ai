@@ -103,6 +103,7 @@ export function LessonCard({ lesson, isExpanded = false, onToggle }: LessonCardP
     })
   }
 
+
   return (
     <Card className="w-full hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
