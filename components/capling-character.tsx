@@ -136,6 +136,39 @@ function DinosaurSVG({ mood }: { mood: CaplingMood }) {
 
 export function CaplingCharacter({ mood, className, name = "Capling", showNameEditor = false, onNameUpdate, userId }: CaplingCharacterProps) {
   const { levelInfo, getLevelTitle, getLevelColor } = useCaplingLevels()
+
+  const getAuraGlow = (level: number) => {
+    if (level >= 20) return {
+      glow: 'shadow-[0_0_30px_rgba(168,85,247,0.8),0_0_60px_rgba(236,72,153,0.6),0_0_90px_rgba(168,85,247,0.4)]',
+      pulse: 'animate-aura-pulse animate-aura-glow',
+      intensity: 'legendary',
+      shimmer: true
+    } // Legendary - Purple/Pink intense glow with shimmer
+    if (level >= 15) return {
+      glow: 'shadow-[0_0_25px_rgba(59,130,246,0.7),0_0_50px_rgba(147,51,234,0.5)]',
+      pulse: 'animate-aura-pulse animate-aura-glow',
+      intensity: 'high',
+      shimmer: false
+    } // Expert - Blue/Purple strong glow
+    if (level >= 10) return {
+      glow: 'shadow-[0_0_20px_rgba(34,197,94,0.6),0_0_40px_rgba(59,130,246,0.4)]',
+      pulse: 'animate-aura-pulse',
+      intensity: 'medium',
+      shimmer: false
+    } // Advanced - Green/Blue medium glow
+    if (level >= 5) return {
+      glow: 'shadow-[0_0_15px_rgba(234,179,8,0.5),0_0_30px_rgba(249,115,22,0.3)]',
+      pulse: 'animate-aura-pulse',
+      intensity: 'low',
+      shimmer: false
+    } // Intermediate - Yellow/Orange subtle glow
+    return {
+      glow: 'shadow-[0_0_10px_rgba(107,114,128,0.3)]',
+      pulse: '',
+      intensity: 'minimal',
+      shimmer: false
+    } // Beginner - Gray minimal glow
+  }
   
   const getMoodColor = () => {
     switch (mood) {
@@ -208,13 +241,34 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
         className={cn(
           "relative flex h-64 w-64 items-center justify-center rounded-full bg-gradient-to-br shadow-2xl transition-all duration-700 p-12 border-4 border-white/20",
           getMoodColor(),
+          levelInfo && getAuraGlow(levelInfo.level).glow,
+          levelInfo && getAuraGlow(levelInfo.level).pulse
         )}
       >
-        {/* Glow effect */}
+        {/* Mood-based glow effect */}
         <div className={cn(
           "absolute inset-0 rounded-full blur-xl opacity-30 transition-all duration-700",
           getMoodColor()
         )} />
+        
+        {/* Level-based aura glow */}
+        {levelInfo && (
+          <div className={cn(
+            "absolute inset-0 rounded-full blur-2xl opacity-40 transition-all duration-1000",
+            getAuraGlow(levelInfo.level).pulse,
+            getAuraGlow(levelInfo.level).shimmer && "animate-legendary-shimmer"
+          )} style={{
+            background: levelInfo.level >= 20 
+              ? 'radial-gradient(circle, rgba(168,85,247,0.6) 0%, rgba(236,72,153,0.4) 50%, transparent 70%)'
+              : levelInfo.level >= 15
+              ? 'radial-gradient(circle, rgba(59,130,246,0.5) 0%, rgba(147,51,234,0.3) 50%, transparent 70%)'
+              : levelInfo.level >= 10
+              ? 'radial-gradient(circle, rgba(34,197,94,0.4) 0%, rgba(59,130,246,0.2) 50%, transparent 70%)'
+              : levelInfo.level >= 5
+              ? 'radial-gradient(circle, rgba(234,179,8,0.3) 0%, rgba(249,115,22,0.2) 50%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(107,114,128,0.2) 0%, transparent 70%)'
+          }} />
+        )}
         
         {/* Character */}
         <div className="relative z-10 animate-bounce-subtle scale-100 drop-shadow-2xl">
