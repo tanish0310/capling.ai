@@ -31,6 +31,10 @@ function TestAPIContent() {
     amount: '',
     description: ''
   })
+  const [levelForm, setLevelForm] = useState({
+    level: '',
+    xp: ''
+  })
 
   if (!user) {
     return (
@@ -259,6 +263,56 @@ function TestAPIContent() {
     }
   }
 
+  const setLevel = async () => {
+    setLoading(true)
+    try {
+      const level = parseInt(levelForm.level)
+      const xp = parseInt(levelForm.xp)
+      
+      if (isNaN(level) || level < 1 || level > 50) {
+        addResult('Set Level', false, null, 'Please enter a valid level (1-50)')
+        setLoading(false)
+        return
+      }
+
+      if (isNaN(xp) || xp < 0) {
+        addResult('Set Level', false, null, 'Please enter a valid XP amount')
+        setLoading(false)
+        return
+      }
+
+      // Calculate total XP based on level and current XP
+      const totalXp = xp
+
+      // Directly update the database with the new level and XP
+      const response = await fetch('/api/set-capling-level', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          level: level,
+          totalXp: totalXp,
+          currentXp: xp
+        })
+      })
+
+      const result = await response.json()
+      addResult('Set Level', response.ok, result, response.ok ? `Set to Level ${level} with ${xp} XP` : result.error)
+      
+      // Clear form on success
+      if (response.ok) {
+        setLevelForm({
+          level: '',
+          xp: ''
+        })
+      }
+    } catch (error) {
+      addResult('Set Level', false, null, error instanceof Error ? error.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const simulateMultipleTransactions = async (count: number = 5) => {
     setLoading(true)
     try {
@@ -459,6 +513,82 @@ function TestAPIContent() {
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
               Make Deposit
+            </Button>
+          </div>
+        </Card>
+
+        {/* Level Setter */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Set Capling Level</h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="level">Level (1-50)</Label>
+                <Input
+                  id="level"
+                  type="number"
+                  min="1"
+                  max="50"
+                  placeholder="e.g., 5, 10, 20"
+                  value={levelForm.level}
+                  onChange={(e) => setLevelForm(prev => ({ ...prev, level: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="xp">Current XP</Label>
+                <Input
+                  id="xp"
+                  type="number"
+                  min="0"
+                  placeholder="e.g., 0, 100, 500"
+                  value={levelForm.xp}
+                  onChange={(e) => setLevelForm(prev => ({ ...prev, xp: e.target.value }))}
+                />
+              </div>
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              <p><strong>Level Guide:</strong></p>
+              <ul className="list-disc list-inside space-y-1 mt-2">
+                <li>Level 1-4: Beginner (minimal glow)</li>
+                <li>Level 5-9: Intermediate (yellow/orange glow)</li>
+                <li>Level 10-14: Advanced (green/blue glow)</li>
+                <li>Level 15-19: Expert (blue/purple glow)</li>
+                <li>Level 20+: Legendary (purple/pink shimmer!)</li>
+              </ul>
+            </div>
+            
+            {/* Quick Level Buttons */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Quick Levels:</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { level: 1, xp: 0, label: 'Beginner' },
+                  { level: 5, xp: 200, label: 'Intermediate' },
+                  { level: 10, xp: 450, label: 'Advanced' },
+                  { level: 15, xp: 700, label: 'Expert' },
+                  { level: 20, xp: 950, label: 'Legendary' }
+                ].map(({ level, xp, label }) => (
+                  <Button
+                    key={level}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLevelForm({ level: level.toString(), xp: xp.toString() })}
+                    disabled={loading}
+                  >
+                    Level {level} ({label})
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <Button 
+              onClick={setLevel} 
+              disabled={loading || !levelForm.level || !levelForm.xp} 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-lg py-6"
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
+              Set Level
             </Button>
           </div>
         </Card>
