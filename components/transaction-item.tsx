@@ -17,6 +17,7 @@ interface Transaction {
   category: TransactionCategory
   classification: TransactionClassification
   reflection?: string
+  improvement_suggestion?: string | null
   date: string
   justification_status?: 'none' | 'pending' | 'justified' | 'rejected'
   original_classification?: string
@@ -109,6 +110,13 @@ export function TransactionItem({ transaction, onClick, onJustificationSubmitted
             
             {transaction.reflection && (
               <p className="text-sm text-muted-foreground italic">{transaction.reflection}</p>
+            )}
+            
+            {transaction.improvement_suggestion && (
+              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-md border-l-2 border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">💡 Suggestion:</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{transaction.improvement_suggestion}</p>
+              </div>
             )}
             
             {needsJustification && (
