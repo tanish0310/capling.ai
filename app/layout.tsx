@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   title: 'Capling - Your Financial Companion',
   description: 'Track your spending, set goals, and learn financial literacy with Capling',
   generator: 'v0.app',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
