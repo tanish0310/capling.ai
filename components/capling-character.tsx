@@ -116,7 +116,7 @@ function DinosaurSVG({ mood }: { mood: CaplingMood }) {
       {/* Cheeks */}
       {mood === "happy" && (
         <>
-          <circle className="opacity-100" cx="25" cy="50" r="5" fill="#fb923c" opacity="0.4" />
+          <circle cx="25" cy="50" r="5" fill="#fb923c" opacity="0.4" />
           <circle cx="75" cy="50" r="5" fill="#fb923c" opacity="0.4" />
         </>
       )}
