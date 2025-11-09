@@ -37,8 +37,7 @@ function TestAPIContent() {
     description: ''
   })
   const [levelForm, setLevelForm] = useState({
-    level: '',
-    xp: ''
+    level: ''
   })
 
   if (!user) {
@@ -90,74 +89,6 @@ function TestAPIContent() {
     }])
   }
 
-  const testFakeBank = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/fake-bank', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          merchant: 'Test Store',
-          amount: 25.99,
-          category: 'shopping',
-          description: 'Test purchase',
-          accountNumber: '1234',
-          routingNumber: '123456789'
-        })
-      })
-
-      const result = await response.json()
-      addResult('Fake Bank API', response.ok, result, response.ok ? undefined : result.error)
-    } catch (error) {
-      addResult('Fake Bank API', false, null, error instanceof Error ? error.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const testLLM = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/test-llm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          merchant: 'Starbucks',
-          amount: 5.50,
-          description: 'Morning coffee'
-        })
-      })
-
-      const result = await response.json()
-      addResult('LLM Test (Mock)', response.ok, result, response.ok ? undefined : result.error)
-    } catch (error) {
-      addResult('LLM Test (Mock)', false, null, error instanceof Error ? error.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const generateRandomTransaction = () => {
-    const transactions = [
-      { merchant: 'Starbucks', amount: 5.50, category: 'dining', description: 'Morning coffee' },
-      { merchant: 'McDonald\'s', amount: 8.75, category: 'dining', description: 'Lunch combo' },
-      { merchant: 'Target', amount: 24.99, category: 'shopping', description: 'Household items' },
-      { merchant: 'Shell Gas', amount: 45.20, category: 'transport', description: 'Gas fill-up' },
-      { merchant: 'Netflix', amount: 15.99, category: 'entertainment', description: 'Monthly subscription' },
-      { merchant: 'Amazon', amount: 67.50, category: 'shopping', description: 'Online purchase' },
-      { merchant: 'Uber', amount: 12.30, category: 'transport', description: 'Ride to downtown' },
-      { merchant: 'Whole Foods', amount: 89.45, category: 'food', description: 'Grocery shopping' },
-      { merchant: 'Spotify', amount: 9.99, category: 'entertainment', description: 'Premium subscription' },
-      { merchant: 'CVS Pharmacy', amount: 18.75, category: 'health', description: 'Prescription pickup' },
-      { merchant: 'Chipotle', amount: 11.25, category: 'dining', description: 'Burrito bowl' },
-      { merchant: 'Apple Store', amount: 29.00, category: 'shopping', description: 'iPhone case' },
-      { merchant: 'Walmart', amount: 156.80, category: 'shopping', description: 'Weekly groceries' },
-      { merchant: 'Lyft', amount: 8.45, category: 'transport', description: 'Short ride' },
-      { merchant: 'Pizza Hut', amount: 22.50, category: 'dining', description: 'Pizza delivery' }
-    ]
-    
-    return transactions[Math.floor(Math.random() * transactions.length)]
-  }
 
   const simulateCustomTransaction = async () => {
     setLoading(true)
@@ -272,7 +203,6 @@ function TestAPIContent() {
     setLoading(true)
     try {
       const level = parseInt(levelForm.level)
-      const xp = parseInt(levelForm.xp)
       
       if (isNaN(level) || level < 1 || level > 50) {
         addResult('Set Level', false, null, 'Please enter a valid level (1-50)')
@@ -280,14 +210,12 @@ function TestAPIContent() {
         return
       }
 
-      if (isNaN(xp) || xp < 0) {
-        addResult('Set Level', false, null, 'Please enter a valid XP amount')
-        setLoading(false)
-        return
-      }
-
-      // Calculate total XP based on level and current XP
-      const totalXp = xp
+      // Cap the level at 50 no matter what
+      const cappedLevel = Math.min(level, 50)
+      
+      // Calculate total XP based on level formula: total_xp = (level - 1) * 50
+      const totalXp = (cappedLevel - 1) * 50
+      const currentXp = totalXp // For the test API, we'll set current XP to total XP
 
       // Directly update the database with the new level and XP
       const response = await fetch('/api/set-capling-level', {
@@ -295,20 +223,19 @@ function TestAPIContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          level: level,
+          level: cappedLevel,
           totalXp: totalXp,
-          currentXp: xp
+          currentXp: currentXp
         })
       })
 
       const result = await response.json()
-      addResult('Set Level', response.ok, result, response.ok ? `Set to Level ${level} with ${xp} XP` : result.error)
+      addResult('Set Level', response.ok, result, response.ok ? `Set to Level ${cappedLevel} with ${totalXp} XP` : result.error)
       
       // Clear form on success
       if (response.ok) {
         setLevelForm({
-          level: '',
-          xp: ''
+          level: ''
         })
       }
     } catch (error) {
@@ -318,66 +245,6 @@ function TestAPIContent() {
     }
   }
 
-  const simulateMultipleTransactions = async (count: number = 5) => {
-    setLoading(true)
-    try {
-      const results = []
-      let successCount = 0
-      let failCount = 0
-
-      for (let i = 0; i < count; i++) {
-        const randomTransaction = generateRandomTransaction()
-        
-        console.log(`🔍 Simulating transaction ${i + 1}/${count}:`, randomTransaction)
-
-        try {
-          const response = await fetch('/api/process-transaction', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              merchant: randomTransaction.merchant,
-              amount: randomTransaction.amount,
-              category: randomTransaction.category,
-              description: randomTransaction.description
-            })
-          })
-
-          const result = await response.json()
-          
-          if (response.ok) {
-            successCount++
-            results.push(`${randomTransaction.merchant} - $${randomTransaction.amount}`)
-          } else {
-            failCount++
-            results.push(`❌ ${randomTransaction.merchant} - ${result.error}`)
-          }
-        } catch (error) {
-          failCount++
-          results.push(`❌ ${randomTransaction.merchant} - ${error instanceof Error ? error.message : 'Unknown error'}`)
-        }
-
-        // Small delay between transactions to avoid overwhelming the API
-        if (i < count - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
-      }
-
-      addResult(
-        `Generate ${count} Transactions`, 
-        failCount === 0, 
-        {
-          summary: `Success: ${successCount}, Failed: ${failCount}`,
-          transactions: results
-        },
-        failCount > 0 ? `${failCount} transactions failed` : undefined
-      )
-    } catch (error) {
-      addResult('Generate Multiple Transactions', false, null, error instanceof Error ? error.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }
 
 
   return (
@@ -538,28 +405,21 @@ function TestAPIContent() {
                   value={levelForm.level}
                   onChange={(e) => setLevelForm(prev => ({ ...prev, level: e.target.value }))}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="xp">Current XP</Label>
-                <Input
-                  id="xp"
-                  type="number"
-                  min="0"
-                  placeholder="e.g., 0, 100, 500"
-                  value={levelForm.xp}
-                  onChange={(e) => setLevelForm(prev => ({ ...prev, xp: e.target.value }))}
-                />
+                <p className="text-xs text-muted-foreground">
+                  XP will be automatically calculated based on the level
+                </p>
               </div>
             </div>
             
             <div className="text-sm text-muted-foreground">
               <p><strong>Level Guide:</strong></p>
               <ul className="list-disc list-inside space-y-1 mt-2">
-                <li>Level 1-4: Beginner (minimal glow)</li>
-                <li>Level 5-9: Intermediate (yellow/orange glow)</li>
-                <li>Level 10-14: Advanced (green/blue glow)</li>
-                <li>Level 15-19: Expert (blue/purple glow)</li>
-                <li>Level 20+: Legendary (purple/pink shimmer!)</li>
+                <li>Level 1 (0 XP): Beginner (minimal glow)</li>
+                <li>Level 5 (200 XP): Intermediate (yellow/orange glow)</li>
+                <li>Level 10 (450 XP): Advanced (green/blue glow)</li>
+                <li>Level 15 (700 XP): Expert (blue/purple glow)</li>
+                <li>Level 20 (950 XP): Legendary (purple/pink shimmer!)</li>
+                <li>Level 50 (2450 XP): Maximum level</li>
               </ul>
             </div>
             
@@ -568,17 +428,17 @@ function TestAPIContent() {
               <Label className="text-sm font-medium">Quick Levels:</Label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { level: 1, xp: 0, label: 'Beginner' },
-                  { level: 5, xp: 200, label: 'Intermediate' },
-                  { level: 10, xp: 450, label: 'Advanced' },
-                  { level: 15, xp: 700, label: 'Expert' },
-                  { level: 20, xp: 950, label: 'Legendary' }
-                ].map(({ level, xp, label }) => (
+                  { level: 1, label: 'Beginner' },
+                  { level: 5, label: 'Intermediate' },
+                  { level: 10, label: 'Advanced' },
+                  { level: 15, label: 'Expert' },
+                  { level: 20, label: 'Legendary' }
+                ].map(({ level, label }) => (
                   <Button
                     key={level}
                     variant="outline"
                     size="sm"
-                    onClick={() => setLevelForm({ level: level.toString(), xp: xp.toString() })}
+                    onClick={() => setLevelForm({ level: level.toString() })}
                     disabled={loading}
                   >
                     Level {level} ({label})
@@ -589,7 +449,7 @@ function TestAPIContent() {
             
             <Button 
               onClick={setLevel} 
-              disabled={loading || !levelForm.level || !levelForm.xp} 
+              disabled={loading || !levelForm.level} 
               className="w-full bg-purple-600 hover:bg-purple-700 text-lg py-6"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
@@ -598,24 +458,6 @@ function TestAPIContent() {
           </div>
         </Card>
 
-        {/* Other Tests */}
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Other Tests</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button onClick={testLLM} disabled={loading} variant="outline" className="text-lg py-6">
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-              Test LLM (Mock)
-            </Button>
-            <Button onClick={testFakeBank} disabled={loading} variant="outline" className="text-lg py-6">
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-              Test Fake Bank API
-            </Button>
-            <Button onClick={() => simulateMultipleTransactions(5)} disabled={loading} variant="secondary" className="text-lg py-6">
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-              Generate 5 Random Transactions
-            </Button>
-          </div>
-        </Card>
 
         {/* Results */}
         <Card className="p-6">
