@@ -13,6 +13,7 @@ import { Wallet, Target, TrendingUp, Plus, Home, Receipt, Trophy, Menu, AlertCir
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDemoData } from "@/hooks/use-demo-data"
 import { AddTransactionModal } from "@/components/add-transaction-modal"
+import { DinosaurIcon } from "@/components/dinosaur-icon"
 import { DemoNotice } from "@/components/demo-notice"
 
 export function DemoApp() {
@@ -106,7 +107,7 @@ export function DemoApp() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-2xl">🌱</div>
+              <DinosaurIcon className="w-8 h-8 text-green-600" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Capling</h1>
                 <p className="text-sm text-muted-foreground">

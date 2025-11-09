@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { AuthForm } from './auth-form'
 import { DemoMode } from './demo-mode'
 import { Loader2 } from 'lucide-react'
+import { DinosaurIcon } from '@/components/dinosaur-icon'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -41,7 +42,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="max-w-md mx-auto p-6 text-center space-y-4">
-          <div className="text-6xl">🌱</div>
+          <DinosaurIcon className="w-16 h-16 text-green-600" />
           <h1 className="text-2xl font-bold">Capling</h1>
           <p className="text-muted-foreground">
             Setting up your secure connection...

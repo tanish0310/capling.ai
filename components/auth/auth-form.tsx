@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Mail, Lock, User } from 'lucide-react'
+import { DinosaurIcon } from '@/components/dinosaur-icon'
 
 export function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -71,7 +72,7 @@ export function AuthForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="text-3xl">🌱</div>
+            <DinosaurIcon className="w-12 h-12 text-green-600" />
             <CardTitle className="text-2xl">Capling</CardTitle>
           </div>
           <CardDescription>

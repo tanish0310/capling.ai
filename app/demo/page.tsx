@@ -11,6 +11,7 @@ import { Wallet, Target, TrendingUp, Plus, Home, Receipt, Trophy, RefreshCw } fr
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMockData } from "@/hooks/use-mock-data"
 import { AddTransactionModal } from "@/components/add-transaction-modal"
+import { DinosaurIcon } from "@/components/dinosaur-icon"
 
 export default function DemoPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
@@ -84,7 +85,7 @@ export default function DemoPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-2xl">🌱</div>
+              <DinosaurIcon className="w-8 h-8 text-green-600" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Capling</h1>
                 <p className="text-sm text-muted-foreground">

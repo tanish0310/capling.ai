@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Play, Database, Sparkles } from 'lucide-react'
+import { DinosaurIcon } from "@/components/dinosaur-icon"
 
 export function SimpleDemo() {
   const [entering, setEntering] = useState(false)
@@ -20,7 +21,7 @@ export function SimpleDemo() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="text-3xl">🌱</div>
+            <DinosaurIcon className="w-12 h-12 text-green-600" />
             <CardTitle className="text-2xl">Capling</CardTitle>
           </div>
           <CardDescription>

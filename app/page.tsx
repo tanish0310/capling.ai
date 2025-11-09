@@ -18,6 +18,7 @@ import { BadgeNotification } from "@/components/badge-notification"
 import { AddTransactionModal } from "@/components/add-transaction-modal"
 import { GoalModal } from "@/components/goal-modal"
 import { GoalAllocationModal } from "@/components/goal-allocation-modal"
+import { DinosaurIcon } from "@/components/dinosaur-icon"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { UserMenu } from "@/components/auth/user-menu"
 import { AuthForm } from "@/components/auth/auth-form"
@@ -26,7 +27,6 @@ import { useAuth } from "@/contexts/auth-context"
 import { useGoalAllocation } from "@/contexts/goal-allocation-context"
 import { OnboardingForm } from "@/components/onboarding-form"
 import { LearnTab } from "@/components/learn-tab"
-import Link from "next/link"
 
 export default function CaplingApp() {
   return (
@@ -398,7 +398,7 @@ function CaplingAppContent() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-2xl">🌱</div>
+              <DinosaurIcon className="w-8 h-8 text-green-600" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Capling</h1>
                 {user && (
@@ -420,11 +420,6 @@ function CaplingAppContent() {
               <Button variant="ghost" size="icon" onClick={refreshData}>
                 <RefreshCw className="h-5 w-5" />
               </Button>
-              <Link href="/test-api">
-                <Button variant="outline" size="sm">
-                  Test API
-                </Button>
-              </Link>
               <UserMenu />
             </div>
           </div>
