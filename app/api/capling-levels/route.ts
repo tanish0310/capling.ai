@@ -59,6 +59,14 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // Calculate progress for new user too
+      const { data: xpForNextLevel } = await supabase
+        .rpc('xp_for_current_level_progress', { total_xp: newLevelData.total_xp });
+
+      const { data: progressPercentage } = await supabase
+        .rpc('current_level_progress_percentage', { total_xp: newLevelData.total_xp });
+
+
       return NextResponse.json({
         success: true,
         levelData: newLevelData,
@@ -66,7 +74,9 @@ export async function GET(request: NextRequest) {
         xp: newLevelData.current_xp,
         totalXp: newLevelData.total_xp,
         consecutiveHappyDays: newLevelData.consecutive_happy_days,
-        lessonsRead: newLevelData.lessons_read
+        lessonsRead: newLevelData.lessons_read,
+        xpForNextLevel: xpForNextLevel || 0,
+        progressPercentage: progressPercentage || 0
       });
     }
 
@@ -79,6 +89,7 @@ export async function GET(request: NextRequest) {
 
     const { data: progressPercentage } = await supabase
       .rpc('current_level_progress_percentage', { total_xp: levelData.total_xp });
+
 
     return NextResponse.json({
       success: true,
