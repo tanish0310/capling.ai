@@ -4,75 +4,75 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated theme for Capling - soft greens, teals, oranges with friendly aesthetic */
-  --background: oklch(0.99 0.005 120);
-  --foreground: oklch(0.25 0.02 180);
+  /* Updated theme for Capling - purple space theme with cosmic aesthetic */
+  --background: oklch(0.99 0.005 300);
+  --foreground: oklch(0.25 0.02 300);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.02 180);
+  --card-foreground: oklch(0.25 0.02 300);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.02 180);
-  --primary: oklch(0.65 0.15 165);
-  --primary-foreground: oklch(0.99 0.005 120);
-  --secondary: oklch(0.72 0.12 85);
-  --secondary-foreground: oklch(0.25 0.02 180);
-  --muted: oklch(0.96 0.01 120);
-  --muted-foreground: oklch(0.55 0.02 180);
-  --accent: oklch(0.68 0.18 45);
-  --accent-foreground: oklch(0.99 0.005 120);
+  --popover-foreground: oklch(0.25 0.02 300);
+  --primary: oklch(0.65 0.15 300);
+  --primary-foreground: oklch(0.99 0.005 300);
+  --secondary: oklch(0.72 0.12 280);
+  --secondary-foreground: oklch(0.25 0.02 300);
+  --muted: oklch(0.96 0.01 300);
+  --muted-foreground: oklch(0.55 0.02 300);
+  --accent: oklch(0.68 0.18 320);
+  --accent-foreground: oklch(0.99 0.005 300);
   --destructive: oklch(0.62 0.22 25);
-  --destructive-foreground: oklch(0.99 0.005 120);
-  --border: oklch(0.92 0.01 120);
-  --input: oklch(0.95 0.01 120);
-  --ring: oklch(0.65 0.15 165);
-  --chart-1: oklch(0.65 0.15 165);
-  --chart-2: oklch(0.72 0.12 85);
-  --chart-3: oklch(0.68 0.18 45);
-  --chart-4: oklch(0.58 0.12 200);
-  --chart-5: oklch(0.75 0.08 140);
+  --destructive-foreground: oklch(0.99 0.005 300);
+  --border: oklch(0.92 0.01 300);
+  --input: oklch(0.95 0.01 300);
+  --ring: oklch(0.65 0.15 300);
+  --chart-1: oklch(0.65 0.15 300);
+  --chart-2: oklch(0.72 0.12 280);
+  --chart-3: oklch(0.68 0.18 320);
+  --chart-4: oklch(0.58 0.12 260);
+  --chart-5: oklch(0.75 0.08 340);
   --radius: 1rem;
-  --sidebar: oklch(0.99 0.005 120);
-  --sidebar-foreground: oklch(0.25 0.02 180);
-  --sidebar-primary: oklch(0.65 0.15 165);
-  --sidebar-primary-foreground: oklch(0.99 0.005 120);
-  --sidebar-accent: oklch(0.96 0.01 120);
-  --sidebar-accent-foreground: oklch(0.25 0.02 180);
-  --sidebar-border: oklch(0.92 0.01 120);
-  --sidebar-ring: oklch(0.65 0.15 165);
+  --sidebar: oklch(0.99 0.005 300);
+  --sidebar-foreground: oklch(0.25 0.02 300);
+  --sidebar-primary: oklch(0.65 0.15 300);
+  --sidebar-primary-foreground: oklch(0.99 0.005 300);
+  --sidebar-accent: oklch(0.96 0.01 300);
+  --sidebar-accent-foreground: oklch(0.25 0.02 300);
+  --sidebar-border: oklch(0.92 0.01 300);
+  --sidebar-ring: oklch(0.65 0.15 300);
 }
 
 .dark {
-  --background: oklch(0.18 0.02 180);
-  --foreground: oklch(0.98 0.005 120);
-  --card: oklch(0.22 0.02 180);
-  --card-foreground: oklch(0.98 0.005 120);
-  --popover: oklch(0.22 0.02 180);
-  --popover-foreground: oklch(0.98 0.005 120);
-  --primary: oklch(0.65 0.15 165);
-  --primary-foreground: oklch(0.18 0.02 180);
-  --secondary: oklch(0.72 0.12 85);
-  --secondary-foreground: oklch(0.18 0.02 180);
-  --muted: oklch(0.28 0.02 180);
-  --muted-foreground: oklch(0.65 0.02 180);
-  --accent: oklch(0.68 0.18 45);
-  --accent-foreground: oklch(0.18 0.02 180);
+  --background: oklch(0.18 0.02 300);
+  --foreground: oklch(0.98 0.005 300);
+  --card: oklch(0.22 0.02 300);
+  --card-foreground: oklch(0.98 0.005 300);
+  --popover: oklch(0.22 0.02 300);
+  --popover-foreground: oklch(0.98 0.005 300);
+  --primary: oklch(0.65 0.15 300);
+  --primary-foreground: oklch(0.18 0.02 300);
+  --secondary: oklch(0.72 0.12 280);
+  --secondary-foreground: oklch(0.18 0.02 300);
+  --muted: oklch(0.28 0.02 300);
+  --muted-foreground: oklch(0.65 0.02 300);
+  --accent: oklch(0.68 0.18 320);
+  --accent-foreground: oklch(0.18 0.02 300);
   --destructive: oklch(0.62 0.22 25);
-  --destructive-foreground: oklch(0.98 0.005 120);
-  --border: oklch(0.28 0.02 180);
-  --input: oklch(0.28 0.02 180);
-  --ring: oklch(0.65 0.15 165);
-  --chart-1: oklch(0.65 0.15 165);
-  --chart-2: oklch(0.72 0.12 85);
-  --chart-3: oklch(0.68 0.18 45);
-  --chart-4: oklch(0.58 0.12 200);
-  --chart-5: oklch(0.75 0.08 140);
-  --sidebar: oklch(0.22 0.02 180);
-  --sidebar-foreground: oklch(0.98 0.005 120);
-  --sidebar-primary: oklch(0.65 0.15 165);
-  --sidebar-primary-foreground: oklch(0.18 0.02 180);
-  --sidebar-accent: oklch(0.28 0.02 180);
-  --sidebar-accent-foreground: oklch(0.98 0.005 120);
-  --sidebar-border: oklch(0.28 0.02 180);
-  --sidebar-ring: oklch(0.65 0.15 165);
+  --destructive-foreground: oklch(0.98 0.005 300);
+  --border: oklch(0.28 0.02 300);
+  --input: oklch(0.28 0.02 300);
+  --ring: oklch(0.65 0.15 300);
+  --chart-1: oklch(0.65 0.15 300);
+  --chart-2: oklch(0.72 0.12 280);
+  --chart-3: oklch(0.68 0.18 320);
+  --chart-4: oklch(0.58 0.12 260);
+  --chart-5: oklch(0.75 0.08 340);
+  --sidebar: oklch(0.22 0.02 300);
+  --sidebar-foreground: oklch(0.98 0.005 300);
+  --sidebar-primary: oklch(0.65 0.15 300);
+  --sidebar-primary-foreground: oklch(0.18 0.02 300);
+  --sidebar-accent: oklch(0.28 0.02 300);
+  --sidebar-accent-foreground: oklch(0.98 0.005 300);
+  --sidebar-border: oklch(0.28 0.02 300);
+  --sidebar-ring: oklch(0.65 0.15 300);
 }
 
 @theme inline {
@@ -174,4 +174,77 @@
   );
   background-size: 200% 100%;
   animation: legendary-shimmer 3s linear infinite;
+}
+
+/* Twinkling stars animation */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes twinkle-delayed-1 {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  25% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+  75% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+}
+
+@keyframes twinkle-delayed-2 {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  33% {
+    opacity: 0.1;
+    transform: scale(0.9);
+  }
+  66% {
+    opacity: 0.9;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes twinkle-delayed-3 {
+  0%, 100% {
+    opacity: 0.1;
+    transform: scale(0.7);
+  }
+  40% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+  80% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.animate-twinkle-delayed-1 {
+  animation: twinkle-delayed-1 4s ease-in-out infinite;
+}
+
+.animate-twinkle-delayed-2 {
+  animation: twinkle-delayed-2 5s ease-in-out infinite;
+}
+
+.animate-twinkle-delayed-3 {
+  animation: twinkle-delayed-3 6s ease-in-out infinite;
 }
