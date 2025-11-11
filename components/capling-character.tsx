@@ -224,9 +224,9 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
   return (
     <div className={cn("flex flex-col items-center gap-6", className)}>
       {/* Name and edit button above the character */}
-      <div className="text-center">
-        <div className="relative inline-flex items-center gap-2">
-          <h3 className="text-2xl font-bold text-foreground">{name}</h3>
+      <div className="text-center w-full">
+        <div className="flex items-center justify-center gap-2">
+          <h3 className="text-3xl font-bold text-foreground">{name}</h3>
           {showNameEditor && onNameUpdate && userId && (
             <CaplingNameEditor
               currentName={name}
@@ -301,12 +301,6 @@ export function CaplingCharacter({ mood, className, name = "Capling", showNameEd
               value={levelInfo.progressPercentage} 
               className="h-2"
             />
-          </div>
-
-          {/* Stats */}
-          <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-            <span>📚 {levelInfo.lessonsRead} lessons</span>
-            <span>😊 {levelInfo.consecutiveHappyDays} happy days</span>
           </div>
         </div>
       )}
