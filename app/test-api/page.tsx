@@ -122,7 +122,12 @@ function TestAPIContent() {
         })
       })
 
-      const result = await response.json()
+      let result
+      try {
+        result = await response.json()
+      } catch {
+        result = { error: `HTTP ${response.status}: ${response.statusText}` }
+      }
       addResult(`Simulate ${transactionForm.merchant} Transaction`, response.ok, result, response.ok ? undefined : result.error)
       
       // Clear form on success
@@ -182,7 +187,12 @@ function TestAPIContent() {
         })
       })
 
-      const result = await response.json()
+      let result
+      try {
+        result = await response.json()
+      } catch {
+        result = { error: `HTTP ${response.status}: ${response.statusText}` }
+      }
       
       if (response.ok) {
         addResult('Deposit', true, result, `Successfully deposited $${amount}`)
@@ -229,7 +239,12 @@ function TestAPIContent() {
         })
       })
 
-      const result = await response.json()
+      let result
+      try {
+        result = await response.json()
+      } catch {
+        result = { error: `HTTP ${response.status}: ${response.statusText}` }
+      }
       addResult('Set Level', response.ok, result, response.ok ? `Set to Level ${cappedLevel} with ${totalXp} XP` : result.error)
       
       // Clear form on success
@@ -244,6 +259,7 @@ function TestAPIContent() {
       setLoading(false)
     }
   }
+
 
 
 
