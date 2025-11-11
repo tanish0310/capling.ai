@@ -140,6 +140,10 @@ export function useBadges() {
   // Check for new badges
   useEffect(() => {
     const newBadges = calculateBadges()
+    console.log('🔍 Badge calculation result:', newBadges.map(b => ({ id: b.id, title: b.title, earned: b.earned })))
+    console.log('🔍 Current earned badges:', [...earnedBadges])
+    console.log('🔍 Is initialized:', isInitialized)
+    
     setBadges(prevBadges => {
       // On first load, just set the badges without showing notifications
       if (!isInitialized) {
@@ -165,6 +169,8 @@ export function useBadges() {
         }
         return isNewlyEarned
       })
+
+      console.log('🔍 Newly earned badges found:', newlyEarned.length)
 
       // Show notification for newly earned badges
       if (newlyEarned.length > 0) {
