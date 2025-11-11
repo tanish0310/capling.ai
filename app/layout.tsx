@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { GoalAllocationProvider } from '@/contexts/goal-allocation-context'
 import { ThemeProvider } from '@/components/theme-provider'
+import { StarsBackground } from '@/components/stars-background'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
+        <StarsBackground />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
