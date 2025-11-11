@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useGoalAllocation } from "@/contexts/goal-allocation-context"
 import { OnboardingForm } from "@/components/onboarding-form"
 import { LearnTab } from "@/components/learn-tab"
+import { useCaplingLevels } from "@/hooks/use-capling-levels"
 
 export default function CaplingApp() {
   return (
@@ -138,6 +139,13 @@ function CaplingAppContent() {
 
   const weeklySpending = spendingInsights.totalSpent
   const reflectionScore = Math.round(spendingInsights.responsiblePercentage) || 75
+
+  // Get happiness streak from capling levels
+  const { levelInfo, fetchLevelData } = useCaplingLevels()
+  const happinessStreak = levelInfo?.consecutiveHappyDays || 0
+
+  // Note: Happiness streak will be updated through other means (e.g., daily checks, manual updates)
+  // For now, we'll just display the current streak from the database
 
   const getMood = () => {
     if (!transactions || transactions.length === 0) return "neutral"
@@ -392,13 +400,13 @@ function CaplingAppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <DinosaurIcon className="w-8 h-8 text-green-600" />
+              <DinosaurIcon className="w-8 h-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Capling</h1>
                 {user && (
@@ -485,8 +493,8 @@ function CaplingAppContent() {
                     <p className="text-xl font-semibold text-foreground">${(weeklyBudget - weeklySpending).toFixed(2)}</p>
                   </div>
                   <div className="bg-background/50 backdrop-blur-sm rounded-lg px-6 py-3 border">
-                    <p className="text-sm text-muted-foreground">Score</p>
-                    <p className="text-xl font-semibold text-foreground">{reflectionScore}%</p>
+                    <p className="text-sm text-muted-foreground">Happy Days</p>
+                    <p className="text-xl font-semibold text-foreground">{happinessStreak} days</p>
                   </div>
                 </div>
               </div>
@@ -516,10 +524,10 @@ function CaplingAppContent() {
                 trend={`${spendingInsights.transactionCount} transactions this month`} 
               />
               <SummaryCard
-                title="Reflection Score"
-                value={`${reflectionScore}%`}
+                title="Happy Streak"
+                value={`${happinessStreak} days`}
                 icon={TrendingUp}
-                trend={`${Math.round(spendingInsights.responsiblePercentage)}% responsible spending`}
+                trend={`Keep Capling happy to build your streak!`}
               />
             </div>
 
