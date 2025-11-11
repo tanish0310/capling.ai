@@ -128,31 +128,46 @@ export async function POST(request: NextRequest) {
     const type = amount < 0 ? 'credit' : 'debit'
     const transactionAmount = Math.abs(amount)
 
-    // Get LLM analysis for the transaction
+    // Check if this is a deposit (negative amount)
+    const isDeposit = amount < 0
+    
+    // Get LLM analysis for the transaction (skip for deposits)
     let analysis
-    try {
-      console.log('🔍 Starting LLM analysis for transaction:', { merchant, amount: transactionAmount, description })
-      const config = getLLMConfig()
-      console.log('🔧 LLM Config loaded:', { provider: config.provider, hasApiKey: !!config.apiKey })
-      
-      analysis = await analyzeTransaction(
-        merchant,
-        transactionAmount,
-        description || merchant,
-        config,
-        account.balance
-      )
-      console.log('✅ LLM analysis completed:', analysis)
-    } catch (llmError) {
-      console.error('❌ LLM analysis failed:', llmError)
-      // Fallback analysis if LLM fails
+    if (isDeposit) {
+      console.log('💰 Skipping LLM analysis for deposit:', { merchant, amount: transactionAmount, description })
       analysis = {
-        classification: 'neutral' as const,
-        reflection: 'Transaction processed - analysis unavailable',
-        confidence: 0.5,
-        reasoning: 'LLM analysis failed'
+        classification: 'responsible' as const,
+        reflection: 'Deposit added to your account',
+        confidence: 1.0,
+        reasoning: 'Deposit transaction',
+        improvement_suggestion: null
       }
-      console.log('🔄 Using fallback analysis:', analysis)
+    } else {
+      try {
+        console.log('🔍 Starting LLM analysis for transaction:', { merchant, amount: transactionAmount, description })
+        const config = getLLMConfig()
+        console.log('🔧 LLM Config loaded:', { provider: config.provider, hasApiKey: !!config.apiKey })
+        
+        analysis = await analyzeTransaction(
+          merchant,
+          transactionAmount,
+          description || merchant,
+          config,
+          account.balance
+        )
+        console.log('✅ LLM analysis completed:', analysis)
+      } catch (llmError) {
+        console.error('❌ LLM analysis failed:', llmError)
+        // Fallback analysis if LLM fails
+        analysis = {
+          classification: 'neutral' as const,
+          reflection: 'Transaction processed - analysis unavailable',
+          confidence: 0.5,
+          reasoning: 'LLM analysis failed',
+          improvement_suggestion: null
+        }
+        console.log('🔄 Using fallback analysis:', analysis)
+      }
     }
 
     // Create transaction date
@@ -165,8 +180,8 @@ export async function POST(request: NextRequest) {
       minute: '2-digit'
     })
 
-    // Determine if transaction needs justification
-    const needsJustification = analysis.classification === 'irresponsible' || analysis.classification === 'neutral'
+    // Determine if transaction needs justification (skip for deposits)
+    const needsJustification = !isDeposit && (analysis.classification === 'irresponsible' || analysis.classification === 'neutral')
     const justificationStatus = needsJustification ? 'pending' : 'none'
 
     // Create the transaction record
