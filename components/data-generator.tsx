@@ -105,7 +105,7 @@ export function DataGenerator({ onDataGenerated }: DataGeneratorProps) {
       {generatedData && (
         <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <TrendingUp className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">Generated Data Preview</span>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">

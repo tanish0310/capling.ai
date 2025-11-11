@@ -21,7 +21,7 @@ export function SimpleDemo() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <DinosaurIcon className="w-12 h-12 text-green-600" />
+            <DinosaurIcon className="w-12 h-12 text-primary" />
             <CardTitle className="text-2xl">Capling</CardTitle>
           </div>
           <CardDescription>

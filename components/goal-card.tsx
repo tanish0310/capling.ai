@@ -68,7 +68,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
           className={`h-2 ${isCompleted ? '[&>div]:bg-green-500' : ''}`} 
         />
         {isCompleted && (
-          <p className="text-xs text-green-600 font-medium">🎉 Goal completed!</p>
+          <p className="text-xs text-primary font-medium">🎉 Goal completed!</p>
         )}
       </div>
     </Card>

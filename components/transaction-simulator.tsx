@@ -171,8 +171,8 @@ export function TransactionSimulator({ userId, accountId, onTransactionsAdded }:
           {result.success ? (
             <>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-600">Simulation Complete</span>
+                <CheckCircle className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Simulation Complete</span>
               </div>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
@@ -181,7 +181,7 @@ export function TransactionSimulator({ userId, accountId, onTransactionsAdded }:
                 </div>
                 <div>
                   <span className="text-muted-foreground">Processed:</span>
-                  <p className="font-medium text-green-600">{result.summary.processed}</p>
+                  <p className="font-medium text-primary">{result.summary.processed}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Failed:</span>
