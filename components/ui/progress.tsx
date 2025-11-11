@@ -15,6 +15,9 @@ function Progress({
   indicatorClassName,
   ...props
 }: ProgressProps) {
+  const progressValue = value || 0
+  const transformValue = 100 - progressValue
+  
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -30,7 +33,10 @@ function Progress({
           'h-full w-full flex-1 transition-all',
           indicatorClassName || 'bg-primary'
         )}
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        style={{ 
+          transform: `translateX(-${transformValue}%)`,
+          width: `${progressValue}%`
+        }}
       />
     </ProgressPrimitive.Root>
   )
