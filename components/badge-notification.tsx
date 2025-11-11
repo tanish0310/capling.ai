@@ -23,10 +23,11 @@ export function BadgeNotification({ badge, show, onComplete }: BadgeNotification
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    console.log('🔔 BadgeNotification useEffect - show:', show, 'badge:', badge?.title)
     if (show) {
       setVisible(true)
     }
-  }, [show])
+  }, [show, badge])
 
   const handleDismiss = () => {
     setVisible(false)

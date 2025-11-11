@@ -20,6 +20,7 @@ export function Confetti({ show, onComplete }: ConfettiProps) {
   }>>([])
 
   useEffect(() => {
+    console.log('🎊 Confetti useEffect - show:', show)
     if (!show) {
       setParticles([])
       return
