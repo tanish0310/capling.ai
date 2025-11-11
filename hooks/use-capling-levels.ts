@@ -58,11 +58,20 @@ export function useCaplingLevels() {
       setError(null)
 
       const response = await fetch(`/api/capling-levels?userId=${user.id}`)
-      const data = await response.json()
-
+      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch capling level')
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If response is not JSON, use the status text
+        }
+        throw new Error(errorMessage)
       }
+
+      const data = await response.json()
 
       setLevelData(data.levelData)
       setLevelInfo({
@@ -111,11 +120,19 @@ export function useCaplingLevels() {
         })
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to add XP')
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If response is not JSON, use the status text
+        }
+        throw new Error(errorMessage)
       }
+
+      const data = await response.json()
 
       // Update local state
       setLevelData(data.levelData)

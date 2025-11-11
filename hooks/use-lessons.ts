@@ -35,12 +35,20 @@ export function useLessons() {
       setError(null)
 
       const response = await fetch(`/api/lessons?userId=${user.id}`)
-      const data = await response.json()
-
+      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch lessons')
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If response is not JSON, use the status text
+        }
+        throw new Error(errorMessage)
       }
 
+      const data = await response.json()
       setLessons(data.lessons || [])
     } catch (err) {
       console.error('Error fetching lessons:', err)
@@ -68,11 +76,19 @@ export function useLessons() {
         body: JSON.stringify({ userId: user.id, forceGenerate })
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate lesson')
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If response is not JSON, use the status text
+        }
+        throw new Error(errorMessage)
       }
+
+      const data = await response.json()
 
       // Refresh lessons list
       await fetchLessons()
