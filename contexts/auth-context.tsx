@@ -13,7 +13,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<{ error: any }>
   completeOnboarding: () => void
-  clearAuthState: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -169,23 +168,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error }
   }
 
-  const clearAuthState = async () => {
-    try {
-      // Clear all auth state
-      await supabase.auth.signOut()
-      // Clear local storage
-      localStorage.clear()
-      // Clear session storage
-      sessionStorage.clear()
-      // Reset state
-      setUser(null)
-      setSession(null)
-      setNeedsOnboarding(false)
-      console.log('Auth state cleared successfully')
-    } catch (error) {
-      console.error('Error clearing auth state:', error)
-    }
-  }
 
   const value = {
     user,
@@ -196,7 +178,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     completeOnboarding,
-    clearAuthState,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

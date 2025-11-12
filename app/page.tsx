@@ -38,7 +38,7 @@ export default function CaplingApp() {
 }
 
 function AppRouter() {
-  const { user, needsOnboarding, completeOnboarding, clearAuthState } = useAuth()
+  const { user, needsOnboarding, completeOnboarding } = useAuth()
 
 
   // If Supabase is available but user is not logged in, show auth form
@@ -59,7 +59,6 @@ function AppRouter() {
           // Refresh the page to reload all data
           window.location.reload()
         }}
-        onClearAuth={clearAuthState}
       />
     )
   }
