@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateMockAnalysis } from '@/lib/llm-analyzer'
+import { analyzeTransaction, getLLMConfig } from '@/lib/llm-analyzer'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,16 +13,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('🧪 Testing mock analysis for:', { merchant, amount, description })
+    console.log('🧪 Testing Gemini analysis for:', { merchant, amount, description })
     
-    const analysis = generateMockAnalysis(merchant, amount, description)
+    const config = getLLMConfig()
+    const analysis = await analyzeTransaction(merchant, amount, description, config)
     
-    console.log('✅ Mock analysis result:', analysis)
+    console.log('✅ Gemini analysis result:', analysis)
 
     return NextResponse.json({
       success: true,
       analysis,
-      test: 'mock'
+      test: 'gemini',
+      provider: config.provider
     })
 
   } catch (error) {

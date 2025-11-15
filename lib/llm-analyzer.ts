@@ -17,15 +17,17 @@ export interface JustificationAnalysis {
 }
 
 export interface LLMConfig {
-  provider: 'openai' | 'anthropic' | 'mock'
+  provider: 'gemini' | 'anthropic' | 'mock'
   apiKey?: string
   model?: string
 }
 
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 // Default configuration - always use GPT
 const defaultConfig: LLMConfig = {
-  provider: 'openai',
-  model: 'gpt-3.5-turbo'
+  provider: 'gemini',
+  model: 'gemini-2.0-flash'
 }
 
 // Transaction analysis prompt
@@ -212,7 +214,8 @@ const generateMockAnalysis = (merchant: string, amount: number, description: str
 }
 
 // OpenAI API integration via server route
-const analyzeWithOpenAI = async (
+// Gemini API integration
+const analyzeWithGemini = async (
   merchant: string, 
   amount: number, 
   description: string, 
@@ -220,60 +223,40 @@ const analyzeWithOpenAI = async (
   accountBalance?: number
 ): Promise<TransactionAnalysis> => {
   try {
-    console.log('🚀 Calling OpenAI API directly...')
+    console.log('🚀 Calling Gemini API directly...')
     
     const prompt = createAnalysisPrompt(merchant, amount, description, accountBalance)
+    
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(config.apiKey!)
+    const model = genAI.getGenerativeModel({ 
+      model: config.model || 'gemini-2.0-flash',
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 200,
+      }
+    })
     
     // Add timeout to prevent hanging
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a strict financial advisor helping users understand their spending habits. Be realistic and honest about what constitutes responsible spending. Most luxury purchases and large unplanned expenses should be classified as irresponsible. You must respond with ONLY a valid JSON object. No other text, explanations, or formatting.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 200
-      }),
-      signal: controller.signal
-    })
-
+    // Generate content
+    const result = await model.generateContent(prompt)
     clearTimeout(timeoutId)
-
-    console.log('📡 OpenAI API response status:', response.status)
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error('❌ OpenAI API error:', response.status, errorData)
-      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`)
-    }
-
-    const result = await response.json()
-    console.log('✅ Received OpenAI analysis:', result)
     
-    const analysisText = result.choices[0]?.message?.content || 'Unable to analyze transaction'
+    const response = result.response
+    const analysisText = response.text()
+    
+    console.log('✅ Received Gemini analysis:', analysisText)
     console.log('🔍 Raw LLM response:', analysisText)
     
     // Parse the response to extract structured data
     return parseAnalysisResponse(analysisText, merchant, amount, description, accountBalance)
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      console.error('❌ OpenAI API call timed out after 10 seconds')
-      throw new Error('OpenAI API call timed out')
+      console.error('❌ Gemini API call timed out after 10 seconds')
+      throw new Error('Gemini API call timed out')
     }
     console.error('❌ API analysis failed:', error)
     // Fallback to mock analysis
@@ -349,13 +332,13 @@ export const analyzeTransaction = async (
   console.log(`🔑 API key available: ${config.apiKey ? 'Yes' : 'No'}`)
 
   switch (config.provider) {
-    case 'openai':
+    case 'gemini':
       if (!config.apiKey) {
-        console.warn('❌ OpenAI API key not provided, falling back to mock analysis')
+        console.warn('❌ Gemini API key not provided, falling back to mock analysis')
         return generateMockAnalysis(merchant, amount, description, accountBalance)
-      }
-      console.log('🚀 Calling OpenAI API...')
-      return analyzeWithOpenAI(merchant, amount, description, config, accountBalance)
+     }
+    console.log('🚀 Calling Gemini API...')
+    return analyzeWithGemini(merchant, amount, description, config, accountBalance)
     
     case 'anthropic':
       if (!config.apiKey) {
@@ -372,12 +355,12 @@ export const analyzeTransaction = async (
   }
 }
 
-// Configuration helper - always use GPT via API route
+// Configuration helper - always use Gemini via API route
 export const getLLMConfig = (): LLMConfig => {
   const config = {
-    provider: 'openai' as const,
-    apiKey: process.env.OPENAI_API_KEY,
-    model: 'gpt-3.5-turbo'
+    provider: 'gemini' as const,
+    apiKey: process.env.GEMINI_API_KEY,
+    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash'
   }
   
   console.log('🔧 LLM Config:', {
@@ -403,8 +386,8 @@ export const analyzeJustification = async (
     
     const config = getLLMConfig()
     
-    if (config.provider === 'openai' && config.apiKey) {
-      return await analyzeJustificationWithOpenAI(merchant, amount, description, justification, originalClassification, config)
+    if (config.provider === 'gemini' && config.apiKey) {
+    return await analyzeJustificationWithGemini(merchant, amount, description, justification, originalClassification, config)
     } else {
       // Fallback to mock analysis
       return generateMockJustificationAnalysis(merchant, amount, justification)
@@ -422,7 +405,8 @@ export const analyzeJustification = async (
 }
 
 // OpenAI-based justification analysis
-const analyzeJustificationWithOpenAI = async (
+// Gemini-based justification analysis
+const analyzeJustificationWithGemini = async (
   merchant: string,
   amount: number,
   description: string,
@@ -433,50 +417,31 @@ const analyzeJustificationWithOpenAI = async (
   try {
     const prompt = createJustificationPrompt(merchant, amount, description, justification, originalClassification)
     
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(config.apiKey!)
+    const model = genAI.getGenerativeModel({ 
+      model: config.model || 'gemini-2.0-flash',
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 200,
+      }
+    })
+    
     // Add timeout to prevent hanging
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a financial advisor helping users understand their spending decisions. Evaluate justifications fairly and provide constructive feedback.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 200
-      }),
-      signal: controller.signal
-    })
-
+    const result = await model.generateContent(prompt)
     clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error('❌ OpenAI API error:', response.status, errorData)
-      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`)
-    }
-
-    const result = await response.json()
-    const analysisText = result.choices[0]?.message?.content || 'Unable to analyze justification'
+    
+    const response = result.response
+    const analysisText = response.text()
     
     return parseJustificationResponse(analysisText, merchant, amount, justification)
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      console.error('❌ OpenAI API call timed out after 10 seconds')
-      throw new Error('OpenAI API call timed out')
+      console.error('❌ Gemini API call timed out after 10 seconds')
+      throw new Error('Gemini API call timed out')
     }
     console.error('❌ Justification analysis failed:', error)
     throw error

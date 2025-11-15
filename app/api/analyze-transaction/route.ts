@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +17,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const apiKey = process.env.OPENAI_API_KEY
+    const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { error: 'Gemini API key not configured' },
         { status: 500 }
       )
     }
@@ -50,49 +51,39 @@ Examples:
 - $150 Amazon → "borderline" with "Big purchase - was this planned?"
 - $800 phone → "impulsive" with "Whoa! Did you really need this now?"
 
-Be encouraging but honest. Focus on helping the user make better financial decisions.`
+Be encouraging but honest. Focus on helping the user make better financial decisions.
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+CRITICAL: Respond with ONLY the JSON object. No other text.`
+
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ 
+      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+      generationConfig: {
         temperature: 0.7,
-        max_completion_tokens: 200
-      })
+        maxOutputTokens: 200,
+      }
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('OpenAI API error:', response.status, errorText)
-      return NextResponse.json(
-        { error: `OpenAI API error: ${response.status}` },
-        { status: 500 }
-      )
-    }
-
-    const data = await response.json()
-    const content = data.choices[0]?.message?.content
+    // Generate content
+    const result = await model.generateContent(prompt)
+    const response = result.response
+    const content = response.text()
 
     if (!content) {
       return NextResponse.json(
-        { error: 'No response from OpenAI' },
+        { error: 'No response from Gemini' },
         { status: 500 }
       )
     }
 
     // Parse JSON response
-    const analysis = JSON.parse(content)
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw new Error('No JSON found in response')
+    }
+    
+    const analysis = JSON.parse(jsonMatch[0])
     
     return NextResponse.json({
       classification: analysis.classification,

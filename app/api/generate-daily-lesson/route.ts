@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-
+import { GoogleGenerativeAI } from '@google/generative-ai';
 interface LessonGenerationRequest {
   userId: string;
   forceGenerate?: boolean; // For testing purposes
@@ -124,9 +124,9 @@ export async function POST(request: NextRequest) {
 
 async function generateLessonWithLLM(existingTopics: string[], existingTitles: string[]): Promise<Lesson | null> {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('OpenAI API key not found');
+      console.error('Gemini API key not found');
       return null;
     }
 
@@ -169,45 +169,35 @@ Respond with ONLY a valid JSON object in this exact format:
 
 Make it unique, practical, and helpful for someone learning personal finance.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful financial literacy expert. Always respond with valid JSON only.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ 
+      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+      generationConfig: {
         temperature: 0.8,
-        max_tokens: 800
-      })
-    });
+        maxOutputTokens: 800,
+      }
+    })
 
-    if (!response.ok) {
-      console.error('OpenAI API error:', response.status, response.statusText);
-      return null;
-    }
-
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
+    // Generate content
+    const result = await model.generateContent(prompt)
+    const response = result.response
+    const content = response.text()
 
     if (!content) {
-      console.error('No content in OpenAI response');
+      console.error('No content in Gemini response');
       return null;
     }
 
     // Parse the JSON response
     try {
-      const lesson = JSON.parse(content) as Lesson;
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        console.error('No JSON found in response');
+        return null;
+      }
+      
+      const lesson = JSON.parse(jsonMatch[0]) as Lesson;
       
       // Validate the lesson structure
       if (!lesson.title || !lesson.content || !lesson.lesson_type || !lesson.topic || !lesson.difficulty_level) {

@@ -9,25 +9,25 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-console.log('🤖 Capling OpenAI Setup');
+console.log('🤖 Capling Gemini Setup');
 console.log('======================');
 console.log('');
-console.log('This script will help you set up your OpenAI API key for Capling.');
-console.log('Get your API key from: https://platform.openai.com/api-keys');
+console.log('This script will help you set up your Google Gemini API key for Capling.');
+console.log('Get your API key from: https://aistudio.google.com/app/apikey');
 console.log('');
 
-rl.question('Enter your OpenAI API key: ', (apiKey) => {
+rl.question('Enter your Gemini API key: ', (apiKey) => {
   if (!apiKey || apiKey.trim() === '') {
     console.log('❌ No API key provided. Exiting...');
     rl.close();
     return;
   }
 
-  const envContent = `# OpenAI API Configuration
-OPENAI_API_KEY=${apiKey.trim()}
+  const envContent = `# Google Gemini API Configuration
+GEMINI_API_KEY=${apiKey.trim()}
 
-# Optional: Override the model (defaults to gpt-3.5-turbo)
-# OPENAI_MODEL=gpt-4
+# Optional: Override the model (defaults to gemini-2.0-flash)
+# GEMINI_MODEL=gemini-2.0-flash
 `;
 
   const envPath = path.join(process.cwd(), '.env.local');
@@ -39,7 +39,7 @@ OPENAI_API_KEY=${apiKey.trim()}
     console.log('');
     console.log('🚀 Next steps:');
     console.log('1. Restart your development server: npm run dev');
-    console.log('2. Add some transactions to see GPT analysis in action!');
+    console.log('2. Add some transactions to see Gemini analysis in action!');
     console.log('');
     console.log('💡 Try these examples:');
     console.log('   - "Emergency vet bill - $300" (should be responsible)');
