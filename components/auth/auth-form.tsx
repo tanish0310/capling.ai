@@ -27,7 +27,7 @@ export function AuthForm() {
   React.useEffect(() => {
     const checkSupabase = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:54321/rest/v1/', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/`, {
           method: 'HEAD',
         })
         if (!response.ok) {
