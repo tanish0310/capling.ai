@@ -25,20 +25,41 @@ export function AuthForm() {
 
   // Check if Supabase is available
   React.useEffect(() => {
-    const checkSupabase = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/`, {
-          method: 'HEAD',
-        })
-        if (!response.ok) {
-          setSupabaseError('Supabase is not running. Please start it with: supabase start')
-        }
-      } catch (error) {
-        setSupabaseError('Supabase is not running. Please start it with: supabase start')
-      }
+  const checkSupabase = async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!url || !key) {
+      setSupabaseError(
+        'Supabase URL or Anon Key is missing. Check your .env.local or Vercel environment variables.'
+      )
+      return
     }
-    checkSupabase()
+
+    try {
+      const response = await fetch(`${url}/rest/v1/`, {
+        method: 'HEAD',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`
+        }
+      })
+
+      if (!response.ok) {
+        setSupabaseError(
+          `Supabase is reachable but returned HTTP ${response.status}. Check anon key and permissions.`
+        )
+      } else {
+        setSupabaseError(null) // everything is fine
+      }
+    } catch (err: any) {
+      setSupabaseError('Network/config error connecting to Supabase: ' + err.message)
+    }
+  }
+
+  checkSupabase()
   }, [])
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

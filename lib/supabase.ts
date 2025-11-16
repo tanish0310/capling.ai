@@ -1,24 +1,33 @@
 import { createClient } from '@supabase/supabase-js'
 import { createBrowserClient } from '@supabase/ssr'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+/**
+ * Determine which Supabase URL and anon key to use:
+ * - Local dev (CLI): .env.local or defaults to 127.0.0.1
+ * - Production: picks up Vercel environment variables
+ */
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbXVjYnZmY3NsamFxYXVia2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyOTMyMDQsImV4cCI6MjA3ODg2OTIwNH0.QnC24ln9fO9HJo-ZY1rrwbovA3j2wMe4kzjdHOWDhS4'
 
-// For client-side usage
+// Client-side Supabase (for React/SSR)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// For server-side usage with SSR
 export function createClientComponentClient() {
   return createBrowserClient(supabaseUrl, supabaseAnonKey)
 }
 
-// For server-side API routes (bypasses RLS)
+// Server-side Supabase API (service role, bypasses RLS)
 export function createServerClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbXVjYnZmY3NsamFxYXVia2pvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzI5MzIwNCwiZXhwIjoyMDc4ODY5MjA0fQ.SKAwOy0Zu7qCLypt9YoJgQ6NhSmgPtUiy-hkAcEIj_4'
   return createClient(supabaseUrl, serviceRoleKey)
 }
 
-// Database types
+// Database types (keep as-is)
 export interface Database {
   public: {
     Tables: {
@@ -58,7 +67,15 @@ export interface Database {
           account_id: string
           merchant: string
           amount: number
-          category: 'shopping' | 'food' | 'transport' | 'bills' | 'dining' | 'entertainment' | 'health' | 'income'
+          category:
+            | 'shopping'
+            | 'food'
+            | 'transport'
+            | 'bills'
+            | 'dining'
+            | 'entertainment'
+            | 'health'
+            | 'income'
           classification: 'responsible' | 'irresponsible' | 'neutral'
           reflection: string | null
           description: string | null
@@ -74,8 +91,16 @@ export interface Database {
           account_id: string
           merchant: string
           amount: number
-          category: 'shopping' | 'food' | 'transport' | 'bills' | 'dining' | 'entertainment' | 'health' | 'income'
-          classification: 'responsible' | 'irresponsible' | 'neutral'
+          category:
+            | 'shopping'
+            | 'food'
+            | 'transport'
+            | 'bills'
+            | 'dining'
+            | 'entertainment'
+            | 'health'
+            | 'income'
+          classification?: 'responsible' | 'irresponsible' | 'neutral'
           reflection?: string | null
           description?: string | null
           date: string
@@ -90,7 +115,15 @@ export interface Database {
           account_id?: string
           merchant?: string
           amount?: number
-          category?: 'shopping' | 'food' | 'transport' | 'bills' | 'dining' | 'entertainment' | 'health' | 'income'
+          category?:
+            | 'shopping'
+            | 'food'
+            | 'transport'
+            | 'bills'
+            | 'dining'
+            | 'entertainment'
+            | 'health'
+            | 'income'
           classification?: 'responsible' | 'borderline' | 'impulsive'
           reflection?: string | null
           description?: string | null
